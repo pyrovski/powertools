@@ -48,4 +48,27 @@ get_power_units(int cpu, struct power_units *p){
 				__FILE__, __LINE__, p->power, p->energy, p->time);
 	}
 }
+
+void
+get_raw_joules( int cpu, uint64_t *raw_joules ){
+	read_msr( cpu, MSR_PKG_ENERGY_STATUS, raw_joules );
+	if(msr_debug){
+		fprintf(stderr, "%s::%d (MSR_DBG) raw joules = %lu\n", 
+				__FILE__, __LINE__, *raw_joules);
+	}
+}
+
+void
+get_joules(int cpu, struct power_units *p, double *joules){
+	static uint64_t last_joules=0; 
+	uint64_t current_joules, delta_joules;
+	get_raw_joules( cpu, &current_joules );
+	delta_joules = current_joules - last_joules;	
+	last_joules = current_joules;
+	*joules = delta_joules / ((double)(1<<(p->energy)));
+	if(msr_debug){
+		fprintf(stderr, "%s::%d (MSR_DBG) scaled delta joules = %lf\n", 
+				__FILE__, __LINE__, *joules);
+	}
+}
 #endif //ARCH_SANDY_BRIDGE

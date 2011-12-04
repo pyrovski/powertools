@@ -31,5 +31,7 @@ struct power_units{
 };
 
 void get_power_units(int cpu, struct power_units *p);
+void get_raw_joules(int cpu, uint64_t *raw_joules);
+void get_joules(int cpu, struct power_units *p, double *joules);
 
 #endif
