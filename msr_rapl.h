@@ -61,15 +61,24 @@ struct power_limit{
 	double time_multiplier_float_2;
 };
 
-void get_power_units(int cpu, struct power_units *p);
-void get_raw_joules(int cpu, uint64_t *raw_joules);
-void get_joules(int cpu, double *joules, struct power_units *units );
-void get_power_info(int cpu, struct power_info *info, struct power_units *units);
-void get_raw_power_info( int cpu, uint64_t *pval );
-void get_power_limit( int cpu, struct power_limit *limit, struct power_units *units );
-void get_raw_power_limit( int cpu, uint64_t *pval );
-void set_power_limit( int cpu, struct power_limit *limit );
-void set_raw_power_limit( int cpu, uint64_t pval );
+// get
+void get_raw_pkg_power_limit( int cpu, uint64_t *pval );
+void get_raw_pkg_energy_status(int cpu, uint64_t *raw_joules);
+void get_raw_pkg_power_info( int cpu, uint64_t *pval );
+void get_raw_pkg_perf_status( int cpu, uint64_t *pstatus);
+
+void get_rapl_power_unit(int cpu, struct power_units *p);
+void get_pkg_energy_status(int cpu, double *joules, struct power_units *units );
+void get_pkg_power_limit( int cpu, struct power_limit *limit, struct power_units *units );
+void get_pkg_power_info(int cpu, struct power_info *info, struct power_units *units);
+void get_pkg_perf_status(int cpu, double *pstatus_sec, struct power_units *units);
+
+// set
+
+void set_raw_pkg_power_limit( int cpu, uint64_t pval );
+
+void set_pkg_power_limit( int cpu, struct power_limit *limit );
+
 #endif //ARCH_SANDY_BRIDGE
 
 double get_power( double joules, struct timeval *start, struct timeval *stop );

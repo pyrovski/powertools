@@ -47,7 +47,7 @@ get_power( double joules, struct timeval *start, struct timeval *stop ){
 
 #ifdef ARCH_SANDY_BRIDGE
 void
-get_power_units(int cpu, struct power_units *p){
+get_rapl_power_unit(int cpu, struct power_units *p){
 	uint64_t val;
 	read_msr( cpu, MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
@@ -70,7 +70,7 @@ get_power_units(int cpu, struct power_units *p){
 }
 
 void
-get_raw_joules( int cpu, uint64_t *raw_joules ){
+get_raw_pkg_energy_status( int cpu, uint64_t *raw_joules ){
 	read_msr( cpu, MSR_PKG_ENERGY_STATUS, raw_joules );
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (MSR_DBG) raw joules = %lu\n", 
@@ -79,10 +79,10 @@ get_raw_joules( int cpu, uint64_t *raw_joules ){
 }
 
 void
-get_joules(int cpu,double *joules, struct power_units *units ){
+get_pkg_energy_status(int cpu,double *joules, struct power_units *units ){
 	static uint64_t last_joules=0; 
 	uint64_t current_joules, delta_joules;
-	get_raw_joules( cpu, &current_joules );
+	get_raw_pkg_energy_status( cpu, &current_joules );
 	delta_joules = current_joules - last_joules;	
 	last_joules = current_joules;
 	*joules = UNIT_SCALE(delta_joules,units->energy);
@@ -93,14 +93,14 @@ get_joules(int cpu,double *joules, struct power_units *units ){
 }
 
 void
-get_raw_power_info( int cpu, uint64_t *pval ){
+get_raw_pkg_power_info( int cpu, uint64_t *pval ){
 	read_msr( cpu, MSR_PKG_POWER_INFO, pval );
 }
 
 void
-get_power_info( int cpu, struct power_info *info, struct power_units *units ){
+get_pkg_power_info( int cpu, struct power_info *info, struct power_units *units ){
 	uint64_t val;
-	get_raw_power_info( cpu, &val );
+	get_raw_pkg_power_info( cpu, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
 	info->max_power	   		= MASK_VAL(val,46,32);
 	info->min_power	   		= MASK_VAL(val,30,16);
@@ -134,17 +134,17 @@ get_power_info( int cpu, struct power_info *info, struct power_units *units ){
 }
 
 void
-get_raw_power_limit( int cpu, uint64_t *pval ){
+get_raw_pkg_power_limit( int cpu, uint64_t *pval ){
 	read_msr( cpu, MSR_PKG_POWER_LIMIT, pval );
 }
 
 void
-set_raw_power_limit( int cpu, uint64_t val ){
+set_raw_pkg_power_limit( int cpu, uint64_t val ){
 	write_msr( cpu, MSR_PKG_POWER_LIMIT, val );
 }
 
 void
-set_power_limit( int cpu, struct power_limit *limit ){
+set_pkg_power_limit( int cpu, struct power_limit *limit ){
 	uint64_t val = 0;
 	val = 
 		  limit->lock 			<< 63
@@ -159,14 +159,14 @@ set_power_limit( int cpu, struct power_limit *limit ){
 		| limit->time_multiplier_2	<< 54
 		| limit->time_multiplier_1	<< 22;
 
-	set_raw_power_limit( 0, val );
+	set_raw_pkg_power_limit( 0, val );
 }
 
 
 void
-get_power_limit( int cpu, struct power_limit *limit, struct power_units *units ){
+get_pkg_power_limit( int cpu, struct power_limit *limit, struct power_units *units ){
 	uint64_t val;
-	get_raw_power_limit( cpu, &val );
+	get_raw_pkg_power_limit( cpu, &val );
 
 	limit->lock		= MASK_VAL(val, 63, 63);
 	limit->time_window_2	= MASK_VAL(val, 53, 49);
@@ -256,6 +256,23 @@ get_power_limit( int cpu, struct power_limit *limit, struct power_units *units )
 				__FILE__, __LINE__, limit->time_multiplier_float_2 );
 	}
 
+}
+
+void
+get_raw_pkg_perf_status( int cpu, uint64_t *pstatus ){
+	read_msr(cpu, MSR_PKG_PERF_STATUS, pstatus);
+}
+
+void
+get_pkg_perf_status( int cpu, double *pstatus, struct power_units *units ){
+	uint64_t status;
+	get_raw_pkg_perf_status( cpu, &status );
+	status = MASK_VAL(status, 31, 0);
+	*pstatus = UNIT_SCALE( status, units->time );
+	if(msr_debug){
+		fprintf(stderr, "%s::%d status = 0x%lx (%15.10lf seconds)\n",
+				__FILE__, __LINE__, status, *pstatus );
+	}
 }
 
 #endif //ARCH_SANDY_BRIDGE
