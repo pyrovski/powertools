@@ -29,9 +29,21 @@ struct power_units{
 	unsigned char energy;
 	unsigned char power;
 };
+struct power_info{
+	uint64_t max_time_window;
+	double   max_time_window_sec;
+	uint64_t max_power;
+	double   max_power_watts;
+	uint64_t min_power;
+	double   min_power_watts;
+	uint64_t thermal_spec_power;
+	double   thermal_spec_power_watts;
+};
 
 void get_power_units(int cpu, struct power_units *p);
 void get_raw_joules(int cpu, uint64_t *raw_joules);
 void get_joules(int cpu, struct power_units *p, double *joules);
+void get_power_info(int cpu, struct power_info *info, struct power_units *units);
+void get_raw_power_info( int cpu, uint64_t *pval );
 
 #endif

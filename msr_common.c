@@ -9,25 +9,20 @@ int msr_debug;
 #include "msr_core.h"
 #include "msr_rapl.h"
 
+
+
 int
 main(int argc, char **argv){
-	struct power_units p;
-	uint64_t raw_joules;
+	struct power_units units;
+	struct power_info info;
 	double joules;
 	msr_debug=1;
 	init_msr();
-	get_power_units(0, &p);
-	get_raw_joules(0, &raw_joules);
-	sleep(1);
-	get_raw_joules(0, &raw_joules);
-	sleep(1);
-	get_raw_joules(0, &raw_joules);
-	sleep(1);
-	get_joules(0, &p, &joules);
-	sleep(1);
-	get_joules(0, &p, &joules);
-	sleep(1);
-	get_joules(0, &p, &joules);
+	get_power_units(0, &units);
+	get_power_info(0, &info, &units);
+	get_joules(0, &units, &joules);
+	sleep(10);
+	get_joules(0, &units, &joules);
 	return 0;
 }
 #endif

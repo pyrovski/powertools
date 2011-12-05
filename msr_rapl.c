@@ -34,18 +34,33 @@
 #define MSR_
 #endif
 
+uint64_t global_test;
+
+static void
+spin(uint64_t i){
+	for(global_test=0; global_test<i; global_test++);
+}
+
 #ifdef ARCH_SANDY_BRIDGE
 void
 get_power_units(int cpu, struct power_units *p){
 	uint64_t val;
 	read_msr( cpu, MSR_RAPL_POWER_UNIT, &val );
-	p->power  = (val & 0x00000f);
-	p->energy = (val & 0x001f00) >>  8;
-	p->time	  = (val & 0x0f0000) >> 16;
+	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
+	//p->energy = (val & MASK_RANGE(12, 8) ); // page 14(29).
+	//p->time	  = (val & MASK_RANGE(19,16) );
+	p->power  = MASK_VAL(val, 3, 0);
+	p->energy = MASK_VAL(val,12, 8);
+	p->time	  = MASK_VAL(val,19,16);
 
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (MSR_DBG) multipliers: p=%u e=%u t=%u\n",
 				__FILE__, __LINE__, p->power, p->energy, p->time);
+		fprintf(stderr, "%s::%d (3,0)=%lx, (12,8)=%lx, (19,16)=%lx\n",
+				__FILE__, __LINE__, 
+				MASK_RANGE(3,0),
+				MASK_RANGE(12,8),
+				MASK_RANGE(19,16));
 	}
 }
 
@@ -65,10 +80,52 @@ get_joules(int cpu, struct power_units *p, double *joules){
 	get_raw_joules( cpu, &current_joules );
 	delta_joules = current_joules - last_joules;	
 	last_joules = current_joules;
-	*joules = delta_joules / ((double)(1<<(p->energy)));
+	//*joules = delta_joules / ((double)(1<<(p->energy)));
+	*joules = UNIT_SCALE(delta_joules,p->energy);
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (MSR_DBG) scaled delta joules = %lf\n", 
 				__FILE__, __LINE__, *joules);
+	}
+}
+
+void
+get_raw_power_info( int cpu, uint64_t *pval ){
+	read_msr( cpu, MSR_PKG_POWER_INFO, pval );
+}
+
+void
+get_power_info( int cpu, struct power_info *info, struct power_units *units ){
+	uint64_t val;
+	get_raw_power_info( cpu, &val );
+	info->max_time_window 		= MASK_VAL(val,53,48);
+	info->max_power	   		= MASK_VAL(val,46,32);
+	info->min_power	   		= MASK_VAL(val,30,16);
+	info->thermal_spec_power 	= MASK_VAL(val,14, 0);
+
+	info->max_time_window_sec	= UNIT_SCALE(info->max_time_window,   units->time);
+	info->max_power_watts		= UNIT_SCALE(info->max_power,         units->power);
+	info->min_power_watts		= UNIT_SCALE(info->min_power,         units->power);
+	info->thermal_spec_power_watts	= UNIT_SCALE(info->thermal_spec_power,units->power);
+
+	if(msr_debug){
+		fprintf(stderr, "%s::%d Raw power info:  %lx\n",
+				__FILE__, __LINE__, val);
+		fprintf(stderr, "%s::%d max time window (%7lx) %10.5lf seconds.\n", 
+				__FILE__, __LINE__, 
+				info->max_time_window,
+				info->max_time_window_sec);
+		fprintf(stderr, "%s::%d max power       (%7lx) %10.5lf watts.\n", 
+				__FILE__, __LINE__, 
+				info->max_power,
+				info->max_power_watts);
+		fprintf(stderr, "%s::%d min power       (%7lx) %10.5lf watts.\n", 
+				__FILE__, __LINE__, 
+				info->min_power,
+				info->min_power_watts);
+		fprintf(stderr, "%s::%d thermal spec    (%7lx) %10.5lf watts.\n", 
+				__FILE__, __LINE__, 
+				info->thermal_spec_power,
+				info->thermal_spec_power_watts);
 	}
 }
 #endif //ARCH_SANDY_BRIDGE
