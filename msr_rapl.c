@@ -79,14 +79,13 @@ get_raw_joules( int cpu, uint64_t *raw_joules ){
 }
 
 void
-get_joules(int cpu, struct power_units *p, double *joules){
+get_joules(int cpu,double *joules, struct power_units *units ){
 	static uint64_t last_joules=0; 
 	uint64_t current_joules, delta_joules;
 	get_raw_joules( cpu, &current_joules );
 	delta_joules = current_joules - last_joules;	
 	last_joules = current_joules;
-	//*joules = delta_joules / ((double)(1<<(p->energy)));
-	*joules = UNIT_SCALE(delta_joules,p->energy);
+	*joules = UNIT_SCALE(delta_joules,units->energy);
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (MSR_DBG) scaled delta joules = %lf\n", 
 				__FILE__, __LINE__, *joules);
@@ -140,19 +139,83 @@ get_raw_power_limit( int cpu, uint64_t *pval ){
 }
 
 void
-get_power_limit( int cpu, struct power_limit *limit, struct power_info *info ){
+set_raw_power_limit( int cpu, uint64_t val ){
+	write_msr( cpu, MSR_PKG_POWER_LIMIT, val );
+}
+
+void
+set_power_limit( int cpu, struct power_limit *limit ){
+	uint64_t val = 0;
+	val = 
+		  limit->lock 			<< 63
+		| limit->time_window_2 		<< 49
+		| limit->time_window_1		<< 17
+		| limit->power_limit_2		<< 32
+		| limit->power_limit_1		<<  0
+		| limit->clamp_2		<< 48
+		| limit->clamp_1		<< 16
+		| limit->enable_2		<< 54
+		| limit->enable_1		<< 15
+		| limit->time_multiplier_2	<< 54
+		| limit->time_multiplier_1	<< 22;
+
+	set_raw_power_limit( 0, val );
+}
+
+
+void
+get_power_limit( int cpu, struct power_limit *limit, struct power_units *units ){
 	uint64_t val;
 	get_raw_power_limit( cpu, &val );
 
 	limit->lock		= MASK_VAL(val, 63, 63);
-	limit->time_window_2	= MASK_VAL(val, 55, 49);
-	limit->time_window_1	= MASK_VAL(val, 23, 17);
+	limit->time_window_2	= MASK_VAL(val, 53, 49);
+	limit->time_window_1	= MASK_VAL(val, 21, 17);
 	limit->power_limit_2	= MASK_VAL(val, 46, 32);
 	limit->power_limit_1	= MASK_VAL(val, 14,  0);
 	limit->clamp_2		= MASK_VAL(val, 48, 48);
 	limit->clamp_1		= MASK_VAL(val, 16, 16);
 	limit->enable_2		= MASK_VAL(val, 47, 47);
 	limit->enable_1		= MASK_VAL(val, 15, 15);
+	limit->time_multiplier_2= MASK_VAL(val, 55, 54);
+	limit->time_multiplier_1= MASK_VAL(val, 23, 22);
+
+
+	// There are several more clever ways of doing this.
+	// I don't care.
+	switch(limit->time_multiplier_2){
+		case 3:	limit->time_multiplier_float_2 = 1.3;	break;
+		case 2:	limit->time_multiplier_float_2 = 1.2;	break;
+		case 1:	limit->time_multiplier_float_2 = 1.1;	break;
+		case 0:	limit->time_multiplier_float_2 = 1.0;	break;
+		default:
+			// Should never, ever get here.
+			fprintf(stderr, "%s::%d BADNESS!  limit->time_multiplier_2 = %lx!\n",
+					__FILE__, __LINE__, limit->time_multiplier_2 );
+	}
+
+	switch(limit->time_multiplier_1){
+		case 3:	limit->time_multiplier_float_1 = 1.3;	break;
+		case 2:	limit->time_multiplier_float_1 = 1.2;	break;
+		case 1:	limit->time_multiplier_float_1 = 1.1;	break;
+		case 0:	limit->time_multiplier_float_1 = 1.0;	break;
+		default:
+			// Should never, ever get here.
+			fprintf(stderr, "%s::%d BADNESS!  limit->time_multiplier_1 = %lx!\n",
+					__FILE__, __LINE__, limit->time_multiplier_1 );
+	}
+
+	limit->time_window_2_sec	= UNIT_SCALE(limit->time_window_2, units->time) 
+					  *
+					  limit->time_multiplier_2;
+
+	limit->time_window_1_sec	= UNIT_SCALE(limit->time_window_1, units->time) 
+					  *
+					  limit->time_multiplier_1;
+
+	limit->power_limit_2_watts	= UNIT_SCALE(limit->power_limit_2, units->power);
+	limit->power_limit_1_watts	= UNIT_SCALE(limit->power_limit_1, units->power);
+
 
 	if( msr_debug ){
 		fprintf( stderr, "%s::%d power limit lock          = %lx\n", 
@@ -173,6 +236,24 @@ get_power_limit( int cpu, struct power_limit *limit, struct power_info *info ){
 				__FILE__, __LINE__, limit->enable_2 );
 		fprintf( stderr, "%s::%d power limit enable 1      = %lx\n", 
 				__FILE__, __LINE__, limit->enable_1 );
+
+		fprintf( stderr, "%s::%d time multiplier 1         = %lx\n", 
+				__FILE__, __LINE__, limit->time_multiplier_1 );
+		fprintf( stderr, "%s::%d time multiplier 2         = %lx\n", 
+				__FILE__, __LINE__, limit->time_multiplier_2 );
+		
+		fprintf( stderr, "%s::%d time_window_2_sec         = %15.10lf\n", 
+				__FILE__, __LINE__, limit->time_window_2_sec );
+		fprintf( stderr, "%s::%d time_window_1_sec         = %15.10lf\n", 
+				__FILE__, __LINE__, limit->time_window_1_sec );
+		fprintf( stderr, "%s::%d power_limit_2_watts        = %15.10lf\n", 
+				__FILE__, __LINE__, limit->power_limit_2_watts );
+		fprintf( stderr, "%s::%d power_limit_1_watts        = %15.10lf\n", 
+				__FILE__, __LINE__, limit->power_limit_1_watts );
+		fprintf( stderr, "%s::%d time_multiplier_float_1    = %15.10lf\n", 
+				__FILE__, __LINE__, limit->time_multiplier_float_1 );
+		fprintf( stderr, "%s::%d time_multiplier_float_2    = %15.10lf\n", 
+				__FILE__, __LINE__, limit->time_multiplier_float_2 );
 	}
 
 }

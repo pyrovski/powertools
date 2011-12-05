@@ -51,19 +51,25 @@ struct power_limit{
 	uint64_t clamp_1;
 	uint64_t enable_1;
 	uint64_t power_limit_1;
+	uint64_t time_multiplier_1;
+	uint64_t time_multiplier_2;
 	double time_window_2_sec;
 	double power_limit_2_watts;
 	double time_window_1_sec;
 	double power_limit_1_watts;
+	double time_multiplier_float_1;
+	double time_multiplier_float_2;
 };
 
 void get_power_units(int cpu, struct power_units *p);
 void get_raw_joules(int cpu, uint64_t *raw_joules);
-void get_joules(int cpu, struct power_units *p, double *joules);
+void get_joules(int cpu, double *joules, struct power_units *units );
 void get_power_info(int cpu, struct power_info *info, struct power_units *units);
 void get_raw_power_info( int cpu, uint64_t *pval );
-void get_power_limit( int cpu, struct power_limit *limit, struct power_info *info );
+void get_power_limit( int cpu, struct power_limit *limit, struct power_units *units );
 void get_raw_power_limit( int cpu, uint64_t *pval );
+void set_power_limit( int cpu, struct power_limit *limit );
+void set_raw_power_limit( int cpu, uint64_t pval );
 #endif //ARCH_SANDY_BRIDGE
 
 double get_power( double joules, struct timeval *start, struct timeval *stop );

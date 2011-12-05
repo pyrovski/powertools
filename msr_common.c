@@ -33,25 +33,25 @@ main(int argc, char **argv){
 	get_power_units(0, &units);
 	get_power_info(0, &info, &units);
 
-	get_joules(0, &units, &joules);
+	get_joules(0, &joules, &units);
 	gettimeofday( &start, NULL );
 	sleep(1);
 	gettimeofday( &stop,  NULL );
-	get_joules(0, &units, &joules);
+	get_joules(0, &joules, &units);
 	power = get_power( joules, &start, &stop );
 	fprintf(stderr, "%s::%d %10.5lf sleep power\n", __FILE__, __LINE__, power);
 
-	get_joules(0, &units, &joules);
+	get_joules(0, &joules, &units);
 	gettimeofday( &start, NULL );
 	for(i=0; i<1; i++){
 		spin(1000000000LL);
 	}
 	gettimeofday( &stop,  NULL );
-	get_joules(0, &units, &joules);
+	get_joules(0, &joules, &units);
 	power = get_power( joules, &start, &stop );
 	fprintf(stderr, "%s::%d %10.5lf single-core spin power\n", __FILE__, __LINE__, power);
 
-	get_power_limit( 0, &limit, &info );
+	get_power_limit( 0, &limit, &units );
 
 	return 0;
 }
