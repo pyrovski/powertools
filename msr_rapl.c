@@ -34,11 +34,15 @@
 #define MSR_
 #endif
 
-uint64_t global_test;
+double
+get_power( double joules, struct timeval *start, struct timeval *stop ){
 
-static void
-spin(uint64_t i){
-	for(global_test=0; global_test<i; global_test++);
+	return joules/
+		(
+			(stop->tv_usec - start->tv_usec)/(double)1000000.0
+			+
+			stop->tv_sec   - start->tv_sec
+		);
 }
 
 #ifdef ARCH_SANDY_BRIDGE

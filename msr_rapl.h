@@ -24,6 +24,7 @@
  * [From Section 14.7.1 "RAPL Interfaces", v3B, p14(28).
  */
 
+#ifdef ARCH_SANDY_BRIDGE
 struct power_units{
 	unsigned char time;
 	unsigned char energy;
@@ -45,5 +46,8 @@ void get_raw_joules(int cpu, uint64_t *raw_joules);
 void get_joules(int cpu, struct power_units *p, double *joules);
 void get_power_info(int cpu, struct power_info *info, struct power_units *units);
 void get_raw_power_info( int cpu, uint64_t *pval );
+#endif //ARCH_SANDY_BRIDGE
+
+double get_power( double joules, struct timeval *start, struct timeval *stop );
 
 #endif
