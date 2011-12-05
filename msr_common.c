@@ -24,6 +24,7 @@ int
 main(int argc, char **argv){
 	struct power_units units;
 	struct power_info info;
+	struct power_limit limit;
 	double joules, power;
 	int i;
 	struct timeval start, stop;
@@ -34,7 +35,7 @@ main(int argc, char **argv){
 
 	get_joules(0, &units, &joules);
 	gettimeofday( &start, NULL );
-	sleep(10);
+	sleep(1);
 	gettimeofday( &stop,  NULL );
 	get_joules(0, &units, &joules);
 	power = get_power( joules, &start, &stop );
@@ -42,13 +43,15 @@ main(int argc, char **argv){
 
 	get_joules(0, &units, &joules);
 	gettimeofday( &start, NULL );
-	for(i=0; i<10; i++){
+	for(i=0; i<1; i++){
 		spin(1000000000LL);
 	}
 	gettimeofday( &stop,  NULL );
 	get_joules(0, &units, &joules);
 	power = get_power( joules, &start, &stop );
 	fprintf(stderr, "%s::%d %10.5lf single-core spin power\n", __FILE__, __LINE__, power);
+
+	get_power_limit( 0, &limit, &info );
 
 	return 0;
 }

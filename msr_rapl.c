@@ -7,7 +7,7 @@
 // MSRs common to 062A and 062D.
 #ifdef ARCH_SANDY_BRIDGE
 #define MSR_RAPL_POWER_UNIT		0x606	// (pkg) Section 14.7.1 "RAPL Interfaces"
-#define MSR_PKG_RAPL_POWER_LIMIT	0x610 	// Section 14.7.3 "Package RAPL Domain"
+#define MSR_PKG_POWER_LIMIT		0x610 	// Section 14.7.3 "Package RAPL Domain"
 #define MSR_PKG_ENERGY_STATUS		0x611
 #define MSR_PKG_PERF_STATUS		0x613
 #define MSR_PKG_POWER_INFO		0x614
@@ -60,11 +60,12 @@ get_power_units(int cpu, struct power_units *p){
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (MSR_DBG) multipliers: p=%u e=%u t=%u\n",
 				__FILE__, __LINE__, p->power, p->energy, p->time);
-		fprintf(stderr, "%s::%d (3,0)=%lx, (12,8)=%lx, (19,16)=%lx\n",
-				__FILE__, __LINE__, 
-				MASK_RANGE(3,0),
-				MASK_RANGE(12,8),
-				MASK_RANGE(19,16));
+		fprintf(stderr, "%s::%d (MSR_DBG) One tick equals %15.10lf watts.\n", 
+				__FILE__, __LINE__, UNIT_SCALE(1, p->power) );
+		fprintf(stderr, "%s::%d (MSR_DBG) One tick equals %15.10lf joules.\n", 
+				__FILE__, __LINE__, UNIT_SCALE(1, p->energy) );
+		fprintf(stderr, "%s::%d (MSR_DBG) One tick equals %15.10lf seconds.\n", 
+				__FILE__, __LINE__, UNIT_SCALE(1, p->time) );
 	}
 }
 
@@ -132,4 +133,48 @@ get_power_info( int cpu, struct power_info *info, struct power_units *units ){
 				info->thermal_spec_power_watts);
 	}
 }
+
+void
+get_raw_power_limit( int cpu, uint64_t *pval ){
+	read_msr( cpu, MSR_PKG_POWER_LIMIT, pval );
+}
+
+void
+get_power_limit( int cpu, struct power_limit *limit, struct power_info *info ){
+	uint64_t val;
+	get_raw_power_limit( cpu, &val );
+
+	limit->lock		= MASK_VAL(val, 63, 63);
+	limit->time_window_2	= MASK_VAL(val, 55, 49);
+	limit->time_window_1	= MASK_VAL(val, 23, 17);
+	limit->power_limit_2	= MASK_VAL(val, 46, 32);
+	limit->power_limit_1	= MASK_VAL(val, 14,  0);
+	limit->clamp_2		= MASK_VAL(val, 48, 48);
+	limit->clamp_1		= MASK_VAL(val, 16, 16);
+	limit->enable_2		= MASK_VAL(val, 47, 47);
+	limit->enable_1		= MASK_VAL(val, 15, 15);
+
+	if( msr_debug ){
+		fprintf( stderr, "%s::%d power limit lock          = %lx\n", 
+				__FILE__, __LINE__, limit->lock );
+		fprintf( stderr, "%s::%d power limit time window 2 = %lx\n", 
+				__FILE__, __LINE__, limit->time_window_2 );
+		fprintf( stderr, "%s::%d power limit time window 1 = %lx\n", 
+				__FILE__, __LINE__, limit->time_window_1 );
+		fprintf( stderr, "%s::%d power limit power limit 1 = %lx\n", 
+				__FILE__, __LINE__, limit->power_limit_2 );
+		fprintf( stderr, "%s::%d power limit power limit 2 = %lx\n", 
+				__FILE__, __LINE__, limit->power_limit_1 );
+		fprintf( stderr, "%s::%d power limit clamp 2       = %lx\n", 
+				__FILE__, __LINE__, limit->clamp_2 );
+		fprintf( stderr, "%s::%d power limit clamp 1       = %lx\n", 
+				__FILE__, __LINE__, limit->clamp_1 );
+		fprintf( stderr, "%s::%d power limit enable 2      = %lx\n", 
+				__FILE__, __LINE__, limit->enable_2 );
+		fprintf( stderr, "%s::%d power limit enable 1      = %lx\n", 
+				__FILE__, __LINE__, limit->enable_1 );
+	}
+
+}
+
 #endif //ARCH_SANDY_BRIDGE

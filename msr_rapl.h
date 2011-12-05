@@ -41,11 +41,29 @@ struct power_info{
 	double   thermal_spec_power_watts;
 };
 
+struct power_limit{
+	uint64_t lock;
+	uint64_t time_window_2;
+	uint64_t clamp_2;
+	uint64_t enable_2;
+	uint64_t power_limit_2;
+	uint64_t time_window_1;
+	uint64_t clamp_1;
+	uint64_t enable_1;
+	uint64_t power_limit_1;
+	double time_window_2_sec;
+	double power_limit_2_watts;
+	double time_window_1_sec;
+	double power_limit_1_watts;
+};
+
 void get_power_units(int cpu, struct power_units *p);
 void get_raw_joules(int cpu, uint64_t *raw_joules);
 void get_joules(int cpu, struct power_units *p, double *joules);
 void get_power_info(int cpu, struct power_info *info, struct power_units *units);
 void get_raw_power_info( int cpu, uint64_t *pval );
+void get_power_limit( int cpu, struct power_limit *limit, struct power_info *info );
+void get_raw_power_limit( int cpu, uint64_t *pval );
 #endif //ARCH_SANDY_BRIDGE
 
 double get_power( double joules, struct timeval *start, struct timeval *stop );
