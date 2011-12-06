@@ -31,7 +31,6 @@
 #define MSR_DRAM_ENERGY_STATUS		0x619
 #define MSR_DRAM_PERF_STATUS		0x61B
 #define MSR_DRAM_POWER_INFO		0x61C
-#define MSR_
 #endif
 
 double
@@ -164,7 +163,7 @@ set_pkg_power_limit( int cpu, struct power_limit *limit ){
 
 
 void
-get_pkg_power_limit( int cpu, struct power_limit *limit, struct power_units *units ){
+get_pkg_power_limit( int cpu, int domain, struct power_limit *limit, struct power_units *units ){
 	uint64_t val;
 	get_raw_pkg_power_limit( cpu, &val );
 

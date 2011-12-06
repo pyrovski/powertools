@@ -79,8 +79,26 @@ void set_raw_pkg_power_limit( int cpu, uint64_t pval );
 
 void set_pkg_power_limit( int cpu, struct power_limit *limit );
 
+enum{
+	PKG_DOMAIN,
+	PP0_DOMAIN,
+#ifdef ARCH_062A
+	PP1_DOMAIN,
+#endif
+#ifdef ARCH_062D
+	DRAM_DOMAIN,
+#endif
+	NUM_DOMAINS
+};
+
+
 #endif //ARCH_SANDY_BRIDGE
+
+
+
 
 double get_power( double joules, struct timeval *start, struct timeval *stop );
 
 #endif
+
+
