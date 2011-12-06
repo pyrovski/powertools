@@ -1,6 +1,6 @@
+#include <stdint.h>
 #ifndef MSR_ENUM_H
 #define MSR_ENUM_H
-
 /* Power Units (bits 3:0):  Power related information 
  * (in Watts) is based on the multiplier, 1/2^{PU}; 
  * where PU is an unsigned integer represented by 
@@ -22,6 +22,28 @@
  * unit is 976 micro-seconds increment.
  *
  * [From Section 14.7.1 "RAPL Interfaces", v3B, p14(28).
+ */
+
+/* Availability
+ *
+ * Power Limit:		Running energy limits 		(RW)
+ * Energy Status:	Accumulated Joules		( W)	
+ * Policy:		Performance hint		(RW)
+ * Perf Status:		Accumulated throttle time.	(R )
+ * Power Info:		Min/Max domain power.		(R )
+ *
+ *
+ * Domain	Power	Energy	Policy	Perf	Power
+ * 		Limit	Status		Status	Info
+ * --------------------------------------------------
+ *  PKG		RW	R	n	n*	R
+ *  DRAM	RW+	R+	n	R+	R+
+ *  PP0		RW	R	RW	n	n
+ *  PP1		RW-	R-	RW-	n	n
+ *
+ *  * "availability may be model specific."
+ *  + ARCH_062D
+ *  - ARCH_O62A
  */
 
 #ifdef ARCH_SANDY_BRIDGE
@@ -62,22 +84,28 @@ struct power_limit{
 };
 
 // get
-void get_raw_pkg_power_limit( int cpu, uint64_t *pval );
-void get_raw_pkg_energy_status(int cpu, uint64_t *raw_joules);
-void get_raw_pkg_power_info( int cpu, uint64_t *pval );
-void get_raw_pkg_perf_status( int cpu, uint64_t *pstatus);
+void get_raw_energy_status(	int cpu, int domain, 	uint64_t *raw_joules);
+void get_raw_pkg_power_limit( 	int cpu, 		uint64_t *pval      );		
+void get_raw_power_info( 	int cpu, int domain, 	uint64_t *pval      );
+void get_raw_perf_status( 	int cpu, int domain,	uint64_t *pstatus   );		
+void get_raw_policy( 		int cpu, int domain, 	uint64_t *priority  );
 
-void get_rapl_power_unit(int cpu, struct power_units *p);
-void get_pkg_energy_status(int cpu, double *joules, struct power_units *units );
-void get_pkg_power_limit( int cpu, struct power_limit *limit, struct power_units *units );
-void get_pkg_power_info(int cpu, struct power_info *info, struct power_units *units);
-void get_pkg_perf_status(int cpu, double *pstatus_sec, struct power_units *units);
+void get_energy_status(		int cpu, int domain, 	double *joules, 		struct power_units *units);
+void get_pkg_power_limit( 	int cpu, int domain, 	struct power_limit *limit, 	struct power_units *units);
+void get_power_info(		int cpu, int domain, 	struct power_info *info, 	struct power_units *units);
+void get_perf_status(		int cpu, int domain, 	double *pstatus_sec, 		struct power_units *units);	
+void get_policy( 		int cpu, int domain, 	uint64_t *ppolicy 					 );
+
+void get_rapl_power_unit(	int cpu, 		struct power_units *p				         );
+
 
 // set
 
-void set_raw_pkg_power_limit( int cpu, uint64_t pval );
+void set_raw_pkg_power_limit( int cpu, uint64_t pval );			//fixme
+void set_raw_policy( int cpu, int domain, uint64_t policy );
 
-void set_pkg_power_limit( int cpu, struct power_limit *limit );
+void set_pkg_power_limit( int cpu, struct power_limit *limit );		//fixme
+void set_policy( int cpu, int domain, uint64_t policy );
 
 enum{
 	PKG_DOMAIN,
@@ -97,7 +125,7 @@ enum{
 
 
 
-double get_power( double joules, struct timeval *start, struct timeval *stop );
+double joules2watts( double joules, struct timeval *start, struct timeval *stop );
 
 #endif
 

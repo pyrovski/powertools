@@ -54,7 +54,7 @@ write_msr(int cpu, off_t msr, uint64_t val){
 	char error_msg[1025];
 	rc = pwrite( fd[cpu], (void*)val, (size_t)8, msr );
 	if( rc != 8 ){
-		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  cpu=%d, msr=%ld (%lx), val=%ld (%lx).\n", 
+		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  cpu=%d, msr=%ld (%lx), val=%ld (0x%lx).\n", 
 				__FILE__, __LINE__, rc, cpu, msr, msr, val, val );
 		perror(error_msg);
 	}
@@ -66,7 +66,7 @@ read_msr(int cpu, off_t msr, uint64_t *val){
 	char error_msg[1025];
 	rc = pread( fd[cpu], (void*)val, (size_t)8, msr );
 	if( rc != 8 ){
-		snprintf( error_msg, 1024, "%s::%d  pread returned %d.  cpu=%d, msr=%ld (%lx), val=%ld (%lx).\n", 
+		snprintf( error_msg, 1024, "%s::%d  pread returned %d.  cpu=%d, msr=%ld (0x%lx), val=%ld (0x%lx).\n", 
 				__FILE__, __LINE__, rc, cpu, msr, msr, *val, *val );
 		perror(error_msg);
 	}
@@ -86,7 +86,7 @@ read_modify_write_msr( int cpu, off_t msr, uint64_t mask, int op ){
 		case MSR_AND:	val &= mask;	break;
 		default:
 			fprintf( stderr, 
-					"%s::%d  Unknown op (%d) passed to read_modify_write_msr.  cpu=%d, msr=%ld (%lx), mask=%lx.\n",
+					"%s::%d  Unknown op (%d) passed to read_modify_write_msr.  cpu=%d, msr=%ld (0x%lx), mask=%lx.\n",
 					__FILE__, __LINE__, op, cpu, msr, msr, mask );
 			break;
 	}
@@ -99,7 +99,7 @@ write_and_validate_msr( int cpu, off_t msr, uint64_t val ){
 	read_msr( cpu, msr, &val2 );
 	if( val != val2 ){
 		fprintf( stderr, 
-				"%s::%d  write_and_validate_msr failed.  cpu=%d, msr=%ld (%lx), val=%lx, val2=%lx.\n",
+				"%s::%d  write_and_validate_msr failed.  cpu=%d, msr=%ld (0x%lx), val=0x%lx, val2=0x%lx.\n",
 				__FILE__, __LINE__, cpu, msr, msr, val, val2 );
 	}
 }
