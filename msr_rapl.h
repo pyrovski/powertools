@@ -101,10 +101,10 @@ void get_rapl_power_unit(	int cpu, 		struct power_units *p				         );
 
 // set
 
-void set_raw_pkg_power_limit( int cpu, uint64_t pval );			//fixme
+void set_raw_pkg_power_limit( int cpu, uint64_t pval );			
 void set_raw_policy( int cpu, int domain, uint64_t policy );
 
-void set_pkg_power_limit( int cpu, struct power_limit *limit );		//fixme
+void set_pkg_power_limit( int cpu, struct power_limit *limit );		
 void set_policy( int cpu, int domain, uint64_t policy );
 
 enum{

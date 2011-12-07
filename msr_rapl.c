@@ -195,27 +195,46 @@ get_raw_power_limit( int cpu, int domain, uint64_t *pval ){
 }
 
 void
-set_raw_pkg_power_limit( int cpu, uint64_t val ){
-	write_msr( cpu, MSR_PKG_POWER_LIMIT, val );
+set_raw_power_limit( int cpu, int domain, uint64_t val ){
+	switch(domain){
+		case PKG_DOMAIN: 	write_msr( cpu, MSR_PKG_POWER_LIMIT, val );	
+					break;
+		case PP0_DOMAIN: 	write_msr( cpu, MSR_PP0_POWER_LIMIT, val );	
+					break;
+#ifdef ARCH_062A				
+		case PP1_DOMAIN: 	write_msr( cpu, MSR_PP1_POWER_LIMIT, val );	
+					break;
+#endif
+#ifdef ARCH_062D				
+		case DRAM_DOMAIN: 	write_msr( cpu, MSR_DRAM_POWER_LIMIT, val );	
+					break;
+#endif
+		default:		assert(0);					
+					break;
+	}
 }
 
 void
-set_pkg_power_limit( int cpu, struct power_limit *limit ){
+set_power_limit( int cpu, int domain, struct power_limit *limit ){
 	uint64_t val = 0;
-	val = 
-		  limit->lock 			<< 63
-		| limit->time_window_2 		<< 49
-		| limit->time_window_1		<< 17
-		| limit->power_limit_2		<< 32
+	if( domain == PKG_DOMAIN ){
+		val |= limit->lock 		<< 63
+		    | limit->time_window_2 	<< 49
+		    | limit->power_limit_2	<< 32
+		    | limit->clamp_2		<< 48
+		    | limit->enable_2		<< 54
+		    | limit->time_multiplier_2	<< 54;
+	}else{
+		val |= limit->lock		<< 32;
+	}
+
+	val |=    limit->time_window_1		<< 17
 		| limit->power_limit_1		<<  0
-		| limit->clamp_2		<< 48
 		| limit->clamp_1		<< 16
-		| limit->enable_2		<< 54
 		| limit->enable_1		<< 15
-		| limit->time_multiplier_2	<< 54
 		| limit->time_multiplier_1	<< 22;
 
-	set_raw_pkg_power_limit( 0, val );
+	set_raw_power_limit( 0, domain, val );
 }
 
 
