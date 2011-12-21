@@ -1,13 +1,18 @@
 /* msr_pebs.c
  */
+#include <unistd.h>
 #include <stdlib.h>	// calloc, exit
 #include <stdint.h>
 #include <sys/mman.h>
 #include <assert.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h> 	// NULL
 #include "msr_pebs.h"
 #include "msr_core.h"
+
+static struct ds_area *pds_area;
 
 static const off_t IA32_DS_AREA		= 0x600;
 static const off_t IA32_PEBS_ENABLE 	= 0x3f1;
@@ -87,7 +92,7 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 
 	init_stomp();	
 	
-	struct ds_area *pds_area = mmap(
+	pds_area = mmap(
 			NULL,			// let kernel choose address
 			sizeof(struct ds_area),	// keep ds and records separate.
 			PROT_READ | PROT_WRITE, 
