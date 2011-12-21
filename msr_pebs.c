@@ -1,14 +1,46 @@
 /* msr_pebs.c
  */
+#include <stdlib.h>	// calloc
 #include <stdint.h>
 #include <sys/mman.h>
 #include <assert.h>
 #include <sys/types.h>
+#include <stdio.h> 	// NULL
 #include "msr_pebs.h"
 #include "msr_core.h"
 
 static const off_t IA32_DS_AREA		= 0x600;
 static const off_t IA32_PEBS_ENABLE 	= 0x3f1;
+static const off_t PERF_GLOBAL_CTRL	= 0x38f;	
+static const off_t PMC0			= 0x0c1;
+static const off_t PMC1			= 0x0c2;
+static const off_t PMC2			= 0x0c3;
+static const off_t PMC3			= 0x0c4;
+static const off_t IA32_PERFEVTSEL0	= 0x186;
+static const off_t IA32_PERFEVTSEL1	= 0x187;
+static const off_t IA32_PERFEVTSEL2	= 0x188;
+static const off_t IA32_PERFEVTSEL3	= 0x189;
+
+static uint64_t *stomp_buf;
+static const uint64_t stomp_sz		= (uint64_t)1024 * 1024 * 64;
+
+static void
+init_stomp(){
+	// 512MB
+	stomp_buf = calloc( (size_t)stomp_sz, sizeof(uint64_t) );
+	assert(stomp_buf);
+}
+
+static void
+stomp(){
+	uint64_t i,j;
+	
+	for(j=0; j<1024; j++){
+		for(i=stomp_sz-4097; i>0; i=i-4097){
+			stomp_buf[i+j] += i+j;
+		}
+	}
+}
 
 void
 pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
@@ -32,7 +64,8 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 	// (11 entries * 8 bytes each = 88 bytes.)
 	
 	// Each PEBS record is 0xB0 byes long.
-	
+
+	init_stomp();	
 	
 	struct ds_area *pds_area = mmap(
 			NULL,			// let kernel choose address
@@ -41,7 +74,7 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 			MAP_ANONYMOUS | MAP_LOCKED,
 			-1,			// dummy file descriptor
 			0);			// offset (ignored).
-	assert(ds_area != (void*)-1);
+	assert(pds_area != (void*)-1);
 
 	struct pebs *ppebs = mmap(
 			NULL,
@@ -54,7 +87,7 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 
 	pds_area->bts_buffer_base 		= 0;
 	pds_area->bts_index			= 0;
-	pds_area->bts_abolute_maximum		= 0;
+	pds_area->bts_absolute_maximum		= 0;
 	pds_area->bts_interrupt_threshold	= 0;
 	pds_area->pebs_buffer_base		= ppebs;
 	pds_area->pebs_index			= ppebs;
@@ -67,8 +100,8 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 	pds_area->reserved			= 0;
 
 	write_msr(0, PERF_GLOBAL_CTRL, 0);			// known good state.
-	write_msr(0, IA32_DS_AREA, (uint64_t)ds_area);
-	write_msr(0, IA32_PEBS_ENABLE, 0xf | (0xf << 32) );	// Figure 18-14.
+	write_msr(0, IA32_DS_AREA, (uint64_t)pds_area);
+	write_msr(0, IA32_PEBS_ENABLE, 0xf | ((uint64_t)0xf << 32) );	// Figure 18-14.
 
 	write_msr(0, PMC0, reset_val[0]);
 	write_msr(1, PMC1, reset_val[1]);
@@ -85,10 +118,10 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 	stomp();
 
 	write_msr(0, PERF_GLOBAL_CTRL, 0x0);
+}
 
 
 
-	// note AnyThread, Edge, Invert and CMask must all be 0.
 	
 
 

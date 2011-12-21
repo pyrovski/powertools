@@ -11,15 +11,15 @@
 // yy = Event Select
 
 						  	//  xxyy 
-static const uint16_t INSTR_RETIRED.ANY_P		= 0x00c0;
-static const uint16_t X87_OPS_RETIRED.ANY		= 0xfec1;
-static const uint16_t BR_INST_RETIRED.MISPRED		= 0x00c5;
-static const uint16_t SIMD_INST_RETIRED.ANY		= 0x1fc7;
-static const uint16_t MEM_LOAD_RETIRED.L1D_MISS		= 0x01cb;
-static const uint16_t MEM_LOAD_RETIRED.L1D_LINE_MISS	= 0x02cb;
-static const uint16_t MEM_LOAD_RETIRED.L2_MISS		= 0x04cb;
-static const uint16_t MEM_LOAD_RETIRED.L2_LINE_MISS	= 0x08cb;
-static const uint16_t MEM_LOAD_RETIRED.DTLB_MISS	= 0x10cb;
+static const uint16_t INSTR_RETIRED__ANY_P		= 0x00c0;
+static const uint16_t X87_OPS_RETIRED__ANY		= 0xfec1;
+static const uint16_t BR_INST_RETIRED__MISPRED		= 0x00c5;
+static const uint16_t SIMD_INST_RETIRED__ANY		= 0x1fc7;
+static const uint16_t MEM_LOAD_RETIRED__L1D_MISS	= 0x01cb;
+static const uint16_t MEM_LOAD_RETIRED__L1D_LINE_MISS	= 0x02cb;
+static const uint16_t MEM_LOAD_RETIRED__L2_MISS		= 0x04cb;
+static const uint16_t MEM_LOAD_RETIRED__L2_LINE_MISS	= 0x08cb;
+static const uint16_t MEM_LOAD_RETIRED__DTLB_MISS	= 0x10cb;
 
 struct pebs{
 	uint64_t eflags;// 0x00
@@ -52,10 +52,10 @@ struct ds_area{
 	uint64_t bts_index;			// 0x08
 	uint64_t bts_absolute_maximum;		// 0x10
 	uint64_t bts_interrupt_threshold;	// 0x18
-	uint64_t pebs_buffer_base;		// 0x20
-	uint64_t pebs_index;			// 0x28
-	uint64_t pebs_absolute_maximum;		// 0x30
-	uint64_t pebs_interrupt_threshold;	// 0x38
+	struct pebs *pebs_buffer_base;		// 0x20
+	struct pebs *pebs_index;		// 0x28
+	struct pebs *pebs_absolute_maximum;	// 0x30
+	struct pebs *pebs_interrupt_threshold;	// 0x38
 	uint64_t pebs_counter0_reset;		// 0x40
 	uint64_t pebs_counter1_reset;		// 0x48
 	uint64_t pebs_counter2_reset;		// 0x50
