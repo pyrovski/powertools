@@ -1,6 +1,6 @@
 /* msr_pebs.c
  */
-#include <stdlib.h>	// calloc
+#include <stdlib.h>	// calloc, exit
 #include <stdint.h>
 #include <sys/mman.h>
 #include <assert.h>
@@ -40,6 +40,26 @@ stomp(){
 			stomp_buf[i+j] += i+j;
 		}
 	}
+}
+
+void 
+dump_pebs(){
+	static int initialized = 0;
+	static int fd = 0;
+	if(!initialized){
+		initialized = 1;
+		fd = open("./pebs.out", O_WRONLY | O_APPEND | O_CREAT );
+		if(fd == -1){
+			fprintf(stderr, "%s::%d file error.\n", __FILE__, __LINE__ );
+			perror("Bye!\n");
+			exit(-1);
+		}
+	}
+	struct pebs *p = pds_area->pebs_buffer_base;
+	while(p != pds_area->pebs_index){
+		write( fd, p, sizeof(struct pebs) );
+	}
+	close(fd);
 }
 
 void
