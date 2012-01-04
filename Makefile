@@ -1,3 +1,6 @@
+# Note:  Sandy Bridge Core is -DARCH_062A
+# 	 Sandy Bridge Xeon is -DARCH_062D
+
 DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062A
 
 test_harness: msr_rapl msr_core msr_common msr_pebs

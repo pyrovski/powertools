@@ -10,7 +10,8 @@
 // xx = UMASK
 // yy = Event Select
 
-						  	//  xxyy 
+// These are the PEBS-enabled counters.		  	//  xxyy 
+static const uint16_t UNUSED_COUNTER			= 0x0000;
 static const uint16_t INSTR_RETIRED__ANY_P		= 0x00c0;
 static const uint16_t X87_OPS_RETIRED__ANY		= 0xfec1;
 static const uint16_t BR_INST_RETIRED__MISPRED		= 0x00c5;
@@ -62,5 +63,8 @@ struct ds_area{
 	uint64_t pebs_counter3_reset;		// 0x58
 	uint64_t reserved;			// 0x60
 };
+
+void pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val);
+void dump_pebs();
 
 #endif // MSR_PEBS_H

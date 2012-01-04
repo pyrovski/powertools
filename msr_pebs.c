@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h> 	// NULL
+#include <errno.h>
 #include "msr_pebs.h"
 #include "msr_core.h"
 
@@ -89,26 +90,28 @@ pebs_init(int nRecords, uint64_t *counter, uint64_t *reset_val ){
 	// (11 entries * 8 bytes each = 88 bytes.)
 	
 	// Each PEBS record is 0xB0 byes long.
-
+	int pagesize = getpagesize();
+	
 	init_stomp();	
 	
-	pds_area = mmap(
-			NULL,			// let kernel choose address
-			sizeof(struct ds_area),	// keep ds and records separate.
-			PROT_READ | PROT_WRITE, 
-			MAP_ANONYMOUS | MAP_LOCKED,
-			-1,			// dummy file descriptor
-			0);			// offset (ignored).
-	assert(pds_area != (void*)-1);
+	// I think we can only have one mapping per process, so put the 
+	// pds_area on the first page and the pebs records on the second
+	// and successive pages.
 
-	struct pebs *ppebs = mmap(
-			NULL,
-			sizeof(struct pebs)*nRecords, 
-			PROT_READ | PROT_WRITE,
-			MAP_ANONYMOUS | MAP_LOCKED,
-			-1,
-			0);
-	assert(ppebs != (void*)-1);
+	pds_area = mmap(
+			NULL,						// let kernel choose address
+			pagesize + 
+				(pagesize*(((sizeof(struct pebs)*nRecords)/pagesize)+1)),	// keep ds and records separate.
+			PROT_READ | PROT_WRITE, 
+			MAP_ANONYMOUS | MAP_LOCKED | MAP_PRIVATE,
+			-1,						// dummy file descriptor
+			0);						// offset (ignored).
+	if(pds_area == (void*)-1){
+		perror("mmap for pds_area failed.");
+		assert(0);
+	}
+
+	struct pebs *ppebs = (struct pebs*) ( (uint64_t)pds_area + pagesize );
 
 	pds_area->bts_buffer_base 		= 0;
 	pds_area->bts_index			= 0;
