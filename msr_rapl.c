@@ -153,7 +153,7 @@ get_power_info( int cpu, int domain, struct power_info *info, struct power_units
 	info->thermal_spec_power_watts	= UNIT_SCALE(info->thermal_spec_power,units->power);
 
 	if(msr_debug){
-		fprintf(stderr, "%s::%d (%s) Raw power info:  %lx\n",
+		fprintf(stderr, "%s::%d (%s) Raw power info:  0x%lx\n",
 				__FILE__, __LINE__, domain2str(domain), val);
 		fprintf(stderr, "%s::%d (%s) max time window (%7lx) %10.5lf seconds.\n", 
 				__FILE__, __LINE__, domain2str(domain), 

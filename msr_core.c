@@ -71,7 +71,7 @@ read_msr(int cpu, off_t msr, uint64_t *val){
 		perror(error_msg);
 	}
 	if( msr_debug ){
-		fprintf(stderr, "%s::%d read msr=%lx val=%lx\n",
+		fprintf(stderr, "%s::%d read msr=0x%lx val=0x%lx\n",
 				__FILE__, __LINE__, msr, *val);
 	}
 }

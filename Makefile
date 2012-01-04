@@ -1,7 +1,7 @@
 # Note:  Sandy Bridge Core is -DARCH_062A
 # 	 Sandy Bridge Xeon is -DARCH_062D
 
-DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062A
+DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062D
 
 test_harness: msr_rapl msr_core msr_common msr_pebs
 	gcc -Wall ${DEFINES} -o msr msr_pebs.c msr_rapl.o msr_common.o msr_core.o 
@@ -16,4 +16,6 @@ msr_pebs: msr_core msr_pebs.c msr_pebs.h Makefile
 clean:
 	rm -f *.o
 
+zin:
+	srun -n 1 -p asde ./msr
 

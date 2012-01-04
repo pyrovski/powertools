@@ -28,18 +28,12 @@ test_power_meters(){
 	struct power_info info[NUM_DOMAINS];
 	double joules[NUM_DOMAINS]; 
 	struct timeval now;
-	/*
-	struct power_limit limit[NUM_DOMAINS];
-	double power[4]; 
-	uint64_t policy; 
 	int i;
-	struct timeval start, stop;
-	*/
 	msr_debug=0;
 	get_rapl_power_unit(0, &units);
 
 #ifdef ARCH_062A
-	get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN], &units);
+	get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
 	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
 	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
 	get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units);
@@ -56,11 +50,14 @@ test_power_meters(){
 #endif
 
 #ifdef ARCH_062D
-	get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN], &units);
+	msr_debug=1;
+	get_power_info(0, PKG_DOMAIN, 	&info[PKG_DOMAIN], 	&units);
+	get_power_info(0, DRAM_DOMAIN, 	&info[DRAM_DOMAIN],	&units);
+	msr_debug=0;
 	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
 	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
 	get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units);
-	while(1){
+	for(i=0; i<100; i++){
 		gettimeofday(&now, NULL);
 		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
 		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
@@ -98,7 +95,9 @@ main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
 	test_power_meters();
-	test_pebs();
+	if(0){
+		test_pebs();
+	}
 	return 0;
 }
 
