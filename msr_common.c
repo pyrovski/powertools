@@ -5,7 +5,7 @@
 #include <sys/time.h>	// getttimeofday()
 #include "msr_common.h"
 
-int msr_debug;
+//int msr_debug;
 
 #ifdef TEST_HARNESS
 #include "msr_core.h"
@@ -65,7 +65,7 @@ test_power_meters(){
 		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[DRAM_DOMAIN] );
-		sleep(1);
+		sleep(10);
 	}
 #endif
 

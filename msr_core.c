@@ -14,7 +14,7 @@
 #include <stdint.h>	// uint64_t
 #include "msr_core.h"
 #include "msr_common.h"
-
+int msr_debug;
 static int fd[NUM_CPUS];
 
 void

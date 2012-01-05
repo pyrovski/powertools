@@ -1,6 +1,6 @@
 #include <stdint.h>
-#ifndef MSR_ENUM_H
-#define MSR_ENUM_H
+#ifndef MSR_RAPL_H
+#define MSR_RAPL_H
 /* Power Units (bits 3:0):  Power related information 
  * (in Watts) is based on the multiplier, 1/2^{PU}; 
  * where PU is an unsigned integer represented by 
@@ -127,6 +127,6 @@ enum{
 
 double joules2watts( double joules, struct timeval *start, struct timeval *stop );
 
-#endif
+#endif //MSR_RAPL_H
 
 
