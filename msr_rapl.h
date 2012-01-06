@@ -91,7 +91,7 @@ void get_raw_perf_status( 	int cpu, int domain,	uint64_t *pstatus   );
 void get_raw_policy( 		int cpu, int domain, 	uint64_t *priority  );
 
 void get_energy_status(		int cpu, int domain, 	double *joules, 		struct power_units *units);
-void get_pkg_power_limit( 	int cpu, int domain, 	struct power_limit *limit, 	struct power_units *units);
+void get_power_limit( 		int cpu, int domain, 	struct power_limit *limit, 	struct power_units *units);
 void get_power_info(		int cpu, int domain, 	struct power_info *info, 	struct power_units *units);
 void get_perf_status(		int cpu, int domain, 	double *pstatus_sec, 		struct power_units *units);	
 void get_policy( 		int cpu, int domain, 	uint64_t *ppolicy 					 );
@@ -101,10 +101,10 @@ void get_rapl_power_unit(	int cpu, 		struct power_units *p				         );
 
 // set
 
-void set_raw_pkg_power_limit( int cpu, uint64_t pval );			
+void set_raw_power_limit( int cpu, int domain, uint64_t pval );			
 void set_raw_policy( int cpu, int domain, uint64_t policy );
 
-void set_pkg_power_limit( int cpu, struct power_limit *limit );		
+void set_power_limit( int cpu, int domain, struct power_limit *limit );		
 void set_policy( int cpu, int domain, uint64_t policy );
 
 enum{

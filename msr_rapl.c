@@ -218,28 +218,29 @@ void
 set_power_limit( int cpu, int domain, struct power_limit *limit ){
 	uint64_t val = 0;
 	if( domain == PKG_DOMAIN ){
-		val |= limit->lock 		<< 63
-		    | limit->time_window_2 	<< 49
-		    | limit->power_limit_2	<< 32
-		    | limit->clamp_2		<< 48
-		    | limit->enable_2		<< 54
-		    | limit->time_multiplier_2	<< 54;
-	}else{
+		val |= (0x0001 & limit->lock) 		<< 63
+		    |  (0x007F & limit->time_window_2) 	<< 49
+		    |  (0x7FFF & limit->power_limit_2)	<< 32
+		    |  (0x0001 & limit->clamp_2)	<< 48
+		    |  (0x0001 & limit->enable_2)	<< 47;
+	}else if(domain == DRAM_DOMAIN){
 		val |= limit->lock		<< 32;
 	}
-
-	val |=    limit->time_window_1		<< 17
-		| limit->power_limit_1		<<  0
-		| limit->clamp_1		<< 16
-		| limit->enable_1		<< 15
-		| limit->time_multiplier_1	<< 22;
+	if( domain == PKG_DOMAIN || domain == DRAM_DOMAIN ){
+		val |= (0x007F & limit->time_window_1)	<< 17
+		    |  (0x7FFF & limit->power_limit_1)	<<  0
+		    |  (0x0001 & limit->clamp_1)	<< 16
+		    |  (0x0001 & limit->enable_1)	<< 15;
+	}else{
+		assert(0);
+	}
 
 	set_raw_power_limit( 0, domain, val );
 }
 
 
 void
-get_pkg_power_limit( int cpu, int domain, struct power_limit *limit, struct power_units *units ){
+get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_units *units ){
 	uint64_t val;
 	get_raw_power_limit( cpu, domain, &val );
 
@@ -344,11 +345,11 @@ void
 get_raw_perf_status( int cpu, int domain, uint64_t *pstatus ){
 	switch(domain){
 #ifdef PKG_PERF_STATUS_AVAILABLE
-		case MSR_PKG_PERF_STATUS: 	read_msr(cpu, MSR_PKG_PERF_STATUS, pstatus);
+		case PKG_DOMAIN: 	read_msr(cpu, MSR_PKG_PERF_STATUS, pstatus);
 						break;
 #endif
 #ifdef ARCH_062D
-		case MSR_DRAM_PERF_STATUS:	read_msr(cpu, MSR_DRAM_PERF_STATUS, pstatus);
+		case DRAM_DOMAIN:	read_msr(cpu, MSR_DRAM_PERF_STATUS, pstatus);
 						break;
 #endif
 		default:			assert(0);
