@@ -30,8 +30,8 @@ extern int msr_debug;
 	PMPI_Barrier( MPI_COMM_WORLD );
 	if(rank == 0){
 		init_msr();
-//		disable_turbo(0);
-//		disable_turbo(1);
+		disable_turbo(0);
+		disable_turbo(1);
 		sleep(1);
 		get_rapl_power_unit(0, &units[0]);
 		get_rapl_power_unit(1, &units[1]);
@@ -51,8 +51,8 @@ extern int msr_debug;
 		get_energy_status( 1, PKG_DOMAIN, &joules[1][PKG_DOMAIN], &units[1] );
 		get_energy_status( 0, PP0_DOMAIN, &joules[0][PP0_DOMAIN], &units[0] );
 		get_energy_status( 1, PP0_DOMAIN, &joules[1][PP0_DOMAIN], &units[1] );
-//		enable_turbo(0);
-//		enable_turbo(1);
+		enable_turbo(0);
+		enable_turbo(1);
 		elapsed = ts_delta( &start, &finish );
 		fprintf(stderr, "QQQ %5s %3.8lf %5.10lf %5.10lf %5.10lf %5.10lf\n",
 			hostname,

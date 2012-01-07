@@ -12,8 +12,10 @@
 #include <sys/stat.h> 	// | open
 #include <fcntl.h>	// / ....
 #include <stdint.h>	// uint64_t
+#include <errno.h>
 #include "msr_core.h"
 #include "msr_common.h"
+
 int msr_debug;
 static int fd[NUM_PACKAGES];
 
@@ -23,10 +25,9 @@ init_msr(){
 	char filename[1025];
 	for (i=0; i<NUM_PACKAGES; i++){
 		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
-		fd[i] = open( filename, O_RDWR | O_NONBLOCK );
+		fd[i] = open( filename, O_RDWR );
 		if(fd[i] == -1){
-			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", 
-					__FILE__, __LINE__, i);
+			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", __FILE__, __LINE__, i);
 			perror(filename);
 		}
 	}
@@ -52,10 +53,10 @@ void
 write_msr(int cpu, off_t msr, uint64_t val){
 	int rc;
 	char error_msg[1025];
-	rc = pwrite( fd[cpu], (void*)val, (size_t)8, msr );
+	rc = pwrite( fd[cpu], &val, (size_t)8, msr );
 	if( rc != 8 ){
-		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  cpu=%d, msr=%ld (%lx), val=%ld (0x%lx).\n", 
-				__FILE__, __LINE__, rc, cpu, msr, msr, val, val );
+		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  fd[%d]=%d, cpu=%d, msr=%ld (%lx), val=%ld (0x%lx).  errno=%d\n", 
+				__FILE__, __LINE__, rc, cpu, fd[cpu], cpu, msr, msr, val, val, errno );
 		perror(error_msg);
 	}
 }
