@@ -3,3 +3,5 @@ end2end.c
 harness
 harness.end2end
 e2e.100s.*
+query.c
+harness.query

@@ -15,14 +15,14 @@
 #include "msr_core.h"
 #include "msr_common.h"
 int msr_debug;
-static int fd[NUM_CPUS];
+static int fd[NUM_PACKAGES];
 
 void
 init_msr(){
 	int i;
 	char filename[1025];
-	for (i=0; i<NUM_CPUS; i++){
-		snprintf(filename, 1024, "/dev/cpu/%d/msr", i);
+	for (i=0; i<NUM_PACKAGES; i++){
+		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
 		fd[i] = open( filename, O_RDWR | O_NONBLOCK );
 		if(fd[i] == -1){
 			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", 
@@ -36,12 +36,12 @@ void
 finalize_msr(){
 	int i, rc;
 	char filename[1025];
-	for( i=0; i<NUM_CPUS; i++){
+	for( i=0; i<NUM_PACKAGES; i++){
 		if(fd[i]){
 			rc = close(fd[i]);
 			if( rc != 0 ){
 				snprintf(filename, 1024, "%s::%d  Error closing file /dev/cpu/%d/msr\n", 
-						__FILE__, __LINE__, i);
+						__FILE__, __LINE__, i*NUM_CORES_PER_PACKAGE);
 				perror(filename);
 			}
 		}

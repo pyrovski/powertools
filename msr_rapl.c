@@ -112,11 +112,11 @@ get_raw_energy_status( int cpu, int domain, uint64_t *raw_joules ){
 
 void
 get_energy_status(int cpu, int domain, double *joules, struct power_units *units ){
-	static uint64_t last_joules[NUM_DOMAINS]={0}; 
+	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( cpu, domain, &current_joules );
-	delta_joules = current_joules - last_joules[domain];	
-	last_joules[domain] = current_joules;
+	delta_joules = current_joules - last_joules[cpu][domain];	
+	last_joules[cpu][domain] = current_joules;
 	*joules = UNIT_SCALE(delta_joules,units->energy);
 	if(msr_debug){
 		fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 

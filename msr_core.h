@@ -2,7 +2,8 @@
 #define MSR_CORE_H
 #include <stdint.h>
 #include <sys/types.h>	// off_t
-#define NUM_CPUS 4
+#define NUM_PACKAGES 2
+#define NUM_CORES_PER_PACKAGE 8
 enum{
 	MSR_AND,
 	MSR_OR,
