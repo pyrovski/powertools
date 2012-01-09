@@ -1,8 +1,15 @@
+all:	end2end end2endall query
+
 end2end:
 	./wrap.py -f -g -o end2end.c end2end.w
 	mpicc -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c end2end.c 
 	mpicc -shared -Wl,-soname,libend2end.so -o ../lib/libend2end.so ../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o end2end.o 
 	mpicc -L../lib -o harness.end2end harness.c -lend2end
+end2endall:
+	./wrap.py -f -g -o end2endall.c end2endall.w
+	mpicc -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c end2endall.c 
+	mpicc -shared -Wl,-soname,libend2endall.so -o ../lib/libend2endall.so ../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o end2endall.o 
+	mpicc -L../lib -o harness.end2endall harness.c -lend2endall
 query:
 	./wrap.py -f -g -o query.c query.w
 	mpicc -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c query.c 
@@ -10,4 +17,7 @@ query:
 	mpicc -L../lib -o harness.query harness.c -lquery
 zin:
 	srun -n 1 --tasks-per-node=1 -p asde ./harness.end2end 
+zend2endall:
+	srun -n 32 --tasks-per-node=1 -p asde ./harness.end2endall
+
 
