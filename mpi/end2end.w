@@ -21,6 +21,7 @@ static uint64_t policy;
 static int rank;
 static char hostname[1025];
 extern int msr_debug;
+static FILE* f;
 
 {{fn foo MPI_Init}}
 	gethostname( hostname, 1024 );
@@ -29,6 +30,7 @@ extern int msr_debug;
 	PMPI_Comm_rank( MPI_COMM_WORLD, &rank );
 	PMPI_Barrier( MPI_COMM_WORLD );
 	if(rank == 0){
+		f = safe_mkstemp(rank, hostname);
 		init_msr();
 		disable_turbo(0);
 		disable_turbo(1);
@@ -54,7 +56,7 @@ extern int msr_debug;
 		enable_turbo(0);
 		enable_turbo(1);
 		elapsed = ts_delta( &start, &finish );
-		fprintf(stderr, "QQQ %5s %3.8lf %5.10lf %5.10lf %5.10lf %5.10lf\n",
+		fprintf(f, "QQQ %5s %3.8lf %5.10lf %5.10lf %5.10lf %5.10lf\n",
 			hostname,
 			elapsed,
 			joules[0][PKG_DOMAIN],

@@ -8,7 +8,7 @@ ts_delta(struct timeval *start, struct timeval *stop){
 }
 
 FILE *
-safe_mkstmp( int rank, const char* str ){
+safe_mkstemp( int rank, const char* str ){
 	FILE *f;
 	int fd=-1;
 	char filename[1024];
