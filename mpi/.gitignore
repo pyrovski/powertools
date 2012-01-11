@@ -7,3 +7,5 @@ query.c
 harness.query
 end2endall.c
 harness.end2endall
+clamp.c
+harness.clamp

@@ -49,25 +49,21 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
 #ifdef ARCH_SANDY_BRIDGE
 void
-get_rapl_power_unit(int cpu, struct power_units *p){
+get_rapl_power_unit(int cpu, struct power_units *units){
 	uint64_t val;
 	read_msr( cpu, MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
 	//p->energy = (val & MASK_RANGE(12, 8) ); // page 14(29).
 	//p->time	  = (val & MASK_RANGE(19,16) );
-	p->power  = MASK_VAL(val, 3, 0);
-	p->energy = MASK_VAL(val,12, 8);
-	p->time	  = MASK_VAL(val,19,16);
+	units->power  	= MASK_VAL(val, 3, 0);
+	units->energy	= MASK_VAL(val,12, 8);
+	units->time  	= MASK_VAL(val,19,16);
 
 	if(msr_debug){
-		fprintf(stderr, "%s::%d  multipliers: p=%u e=%u t=%u\n",
-				__FILE__, __LINE__, p->power, p->energy, p->time);
-		fprintf(stderr, "%s::%d  One tick equals %15.10lf watts.\n", 
-				__FILE__, __LINE__, UNIT_SCALE(1, p->power) );
-		fprintf(stderr, "%s::%d  One tick equals %15.10lf joules.\n", 
-				__FILE__, __LINE__, UNIT_SCALE(1, p->energy) );
-		fprintf(stderr, "%s::%d  One tick equals %15.10lf seconds.\n", 
-				__FILE__, __LINE__, UNIT_SCALE(1, p->time) );
+		fprintf(stderr, "%s::%d  multipliers: p=0x%x e=0x%x t=0x%x\n", __FILE__, __LINE__, 	units->power, units->energy, units->time);
+		fprintf(stderr, "%s::%d  One tick equals %15.10lf watts.\n", __FILE__, __LINE__, 	UNIT_SCALE(1, units->power));
+		fprintf(stderr, "%s::%d  One tick equals %15.10lf joules.\n", __FILE__, __LINE__, 	UNIT_SCALE(1, units->energy));
+		fprintf(stderr, "%s::%d  One tick equals %15.10lf seconds.\n", __FILE__, __LINE__, 	UNIT_SCALE(1, units->time));
 	}
 }
 
@@ -117,7 +113,7 @@ get_energy_status(int cpu, int domain, double *joules, struct power_units *units
 	get_raw_energy_status( cpu, domain, &current_joules );
 	delta_joules = current_joules - last_joules[cpu][domain];	
 	last_joules[cpu][domain] = current_joules;
-	*joules = UNIT_SCALE(delta_joules,units->energy);
+	*joules = UNIT_SCALE(delta_joules, units->energy);
 	if(msr_debug){
 		fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
 				__FILE__, __LINE__, domain2str(domain), *joules);
@@ -254,10 +250,10 @@ get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_un
 	}else{
 		limit->lock		= MASK_VAL(val, 31, 31);
 	}
-	limit->time_window_1	= MASK_VAL(val, 21, 17);
 	limit->power_limit_1	= MASK_VAL(val, 14,  0);
-	limit->clamp_1		= MASK_VAL(val, 16, 16);
 	limit->enable_1		= MASK_VAL(val, 15, 15);
+	limit->clamp_1		= MASK_VAL(val, 16, 16);
+	limit->time_window_1	= MASK_VAL(val, 21, 17);
 	limit->time_multiplier_1= MASK_VAL(val, 23, 22);
 
 
@@ -276,7 +272,7 @@ get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_un
 		}
 		limit->time_window_2_sec	= UNIT_SCALE(limit->time_window_2, units->time) 
 						  *
-						  limit->time_multiplier_2;
+						  limit->time_multiplier_float_2;
 		limit->power_limit_2_watts	= UNIT_SCALE(limit->power_limit_2, units->power);
 	}
 
@@ -293,21 +289,25 @@ get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_un
 
 	limit->time_window_1_sec	= UNIT_SCALE(limit->time_window_1, units->time) 
 					  *
-					  limit->time_multiplier_1;
+					  limit->time_multiplier_float_1;
+	/*
+	fprintf( stderr, "%s::%d limit->time_window_1= 0x%lx, units->time=0x%x, UNIT_SCALE(limit->time_window_1, units->time)=%lf, limit->time_window_1_sec=%lf, limit->time_multiplier_1=%lf\n",
+			__FILE__, __LINE__, limit->time_window_1, units->time, UNIT_SCALE(limit->time_window_1, units->time), limit->time_window_1_sec, limit->time_multiplier_1);
+			*/
 
 	limit->power_limit_1_watts	= UNIT_SCALE(limit->power_limit_1, units->power);
 
 	if( msr_debug && (domain == PKG_DOMAIN) ){
 
-		fprintf( stderr, "%s::%d power limit time window 2 = %lx\n", 
+		fprintf( stderr, "%s::%d power limit time window 2 = 0x%lx\n", 
 				__FILE__, __LINE__, limit->time_window_2 );
-		fprintf( stderr, "%s::%d power limit power limit 2 = %lx\n", 
-				__FILE__, __LINE__, limit->power_limit_1 );
-		fprintf( stderr, "%s::%d power limit clamp 2       = %lx\n", 
+		fprintf( stderr, "%s::%d power limit power limit 2 = 0x%lx\n", 
+				__FILE__, __LINE__, limit->power_limit_2 );
+		fprintf( stderr, "%s::%d power limit clamp 2       = 0x%lx\n", 
 				__FILE__, __LINE__, limit->clamp_2 );
-		fprintf( stderr, "%s::%d power limit enable 2      = %lx\n", 
+		fprintf( stderr, "%s::%d power limit enable 2      = 0x%lx\n", 
 				__FILE__, __LINE__, limit->enable_2 );
-		fprintf( stderr, "%s::%d time multiplier 2         = %lx\n", 
+		fprintf( stderr, "%s::%d time multiplier 2         = 0x%lx\n", 
 				__FILE__, __LINE__, limit->time_multiplier_2 );
 		fprintf( stderr, "%s::%d time_window_2_sec         = %15.10lf\n", 
 				__FILE__, __LINE__, limit->time_window_2_sec );
@@ -317,18 +317,18 @@ get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_un
 				__FILE__, __LINE__, limit->time_multiplier_float_2 );
 	}
 	if( msr_debug ){
-		fprintf( stderr, "%s::%d power limit lock          = %lx\n", 
+		fprintf( stderr, "%s::%d power limit lock          = 0x%lx\n", 
 				__FILE__, __LINE__, limit->lock );
-		fprintf( stderr, "%s::%d power limit time window 1 = %lx\n", 
+		fprintf( stderr, "%s::%d power limit time window 1 = 0x%lx\n", 
 				__FILE__, __LINE__, limit->time_window_1 );
-		fprintf( stderr, "%s::%d power limit power limit 1 = %lx\n", 
-				__FILE__, __LINE__, limit->power_limit_2 );
-		fprintf( stderr, "%s::%d power limit clamp 1       = %lx\n", 
+		fprintf( stderr, "%s::%d power limit power limit 1 = 0x%lx\n", 
+				__FILE__, __LINE__, limit->power_limit_1 );
+		fprintf( stderr, "%s::%d power limit clamp 1       = 0x%lx\n", 
 				__FILE__, __LINE__, limit->clamp_1 );
-		fprintf( stderr, "%s::%d power limit enable 1      = %lx\n", 
+		fprintf( stderr, "%s::%d power limit enable 1      = 0x%lx\n", 
 				__FILE__, __LINE__, limit->enable_1 );
 
-		fprintf( stderr, "%s::%d time multiplier 1         = %lx\n", 
+		fprintf( stderr, "%s::%d time multiplier 1         = 0x%lx\n", 
 				__FILE__, __LINE__, limit->time_multiplier_1 );
 		
 		fprintf( stderr, "%s::%d time_window_1_sec         = %15.10lf\n", 

@@ -8,11 +8,12 @@ ts_delta(struct timeval *start, struct timeval *stop){
 }
 
 FILE *
-safe_mkstemp( int rank, const char* str ){
+safe_mkstemp( const char *hostname, const char *slurm_job_name, int rank ){
 	FILE *f;
 	int fd=-1;
 	char filename[1024];
-	sprintf(filename, "%04d_%s_XXXXXX", rank, str);
+	sprintf(filename, "%s_%s_%04d__XXXXXX", hostname, slurm_job_name, rank);
+	fprintf(stderr, "filename=%s\n", filename);
 	fd=mkstemp(filename);
 	if(fd==-1){
 		fprintf(stderr, "%s::%d  Error opening %s for reading.\n", __FILE__, __LINE__, filename);

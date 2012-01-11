@@ -1,6 +1,6 @@
 /****************************************************************************************************/
 /****************************************************************************************************/
-/* end2end.c automatically created by end2end.w							    */
+/* clamp.c automatically created by clamp.w							    */
 /****************************************************************************************************/
 /****************************************************************************************************/
 #include <stdio.h>
@@ -23,6 +23,9 @@ static char hostname[1025];
 extern int msr_debug;
 static FILE* f;
 
+uint64_t original_pkg_power_limit[2];
+uint64_t test_pkg_power_limit = 0x781e0001581e0LL;	// Unchanged windows, power limit=60W, enabled and clamped.
+
 {{fn foo MPI_Init}}
 	gethostname( hostname, 1024 );
 	{{callfn}}
@@ -42,6 +45,14 @@ static FILE* f;
 		get_energy_status( 0, PP0_DOMAIN, &joules[0][PP0_DOMAIN], &units[0] );
 		get_energy_status( 1, PP0_DOMAIN, &joules[1][PP0_DOMAIN], &units[1] );
 		gettimeofday( &start, NULL );
+
+		get_raw_power_limit( 0, PKG_DOMAIN, &original_pkg_power_limit[0] );
+		get_raw_power_limit( 1, PKG_DOMAIN, &original_pkg_power_limit[1] );
+
+		set_raw_power_limit( 0, PKG_DOMAIN, test_pkg_power_limit );
+		set_raw_power_limit( 1, PKG_DOMAIN, test_pkg_power_limit );
+
+		
 	}
 {{endfn}}
 
@@ -56,13 +67,15 @@ static FILE* f;
 		enable_turbo(0);
 		enable_turbo(1);
 		elapsed = ts_delta( &start, &finish );
-		fprintf(f, "QQQ %5s %3.8lf %5.10lf %5.10lf %5.10lf %5.10lf %s\n",
+		fprintf(f, "QQQ %5s %3.8lf %5.10lf %5.10lf %5.10lf %5.10lf 0x%0lx 0x%0lx %s\n",
 			hostname,
 			elapsed,
 			joules[0][PKG_DOMAIN],
 			joules[1][PKG_DOMAIN],
 			joules[0][PP0_DOMAIN],
 			joules[1][PP0_DOMAIN],
+			original_pkg_power_limit[0],
+			original_pkg_power_limit[1],
 			getenv("SLURM_JOB_NAME"));
 	}
 	PMPI_Barrier( MPI_COMM_WORLD );
