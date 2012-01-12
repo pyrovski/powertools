@@ -24,7 +24,25 @@ extern int msr_debug;
 static FILE* f;
 
 uint64_t original_pkg_power_limit[2];
-uint64_t test_pkg_power_limit = 0x781e0001581e0LL;	// Unchanged windows, power limit=60W, enabled and clamped.
+
+#ifdef CLAMP_52W
+uint64_t test_pkg_power_limit = 0x781a0001581a0LL;	
+#endif
+#ifdef CLAMP_53W
+uint64_t test_pkg_power_limit = 0x781a8001581a8LL;	
+#endif
+#ifdef CLAMP_55W
+uint64_t test_pkg_power_limit = 0x781b8001581b8LL;	
+#endif
+#ifdef CLAMP_60W
+uint64_t test_pkg_power_limit = 0x781e0001581e0LL;	
+#endif
+#ifdef CLAMP_65W
+uint64_t test_pkg_power_limit = 0x7820800158208LL;	
+#endif
+#ifdef CLAMP_70W
+uint64_t test_pkg_power_limit = 0x7823000158230LL;	
+#endif
 
 {{fn foo MPI_Init}}
 	gethostname( hostname, 1024 );
