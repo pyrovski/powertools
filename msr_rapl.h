@@ -46,6 +46,37 @@
  *  - ARCH_O62A
  */
 
+// MSRs common to 062A and 062D.
+#ifdef ARCH_SANDY_BRIDGE
+#define MSR_RAPL_POWER_UNIT             0x606   // (pkg) Section 14.7.1 "RAPL Interfaces"
+#define MSR_PKG_POWER_LIMIT             0x610   // Section 14.7.3 "Package RAPL Domain"
+#define MSR_PKG_ENERGY_STATUS           0x611
+#ifdef PKG_PERF_STATUS_AVAILABLE                                
+#define MSR_PKG_PERF_STATUS             0x613   // aka MSR_PKG_RAPL_PERF_STATUS, uncertain availability.
+#endif
+#define MSR_PKG_POWER_INFO              0x614
+#define MSR_PP0_POWER_LIMIT             0x638   // Section 14.7.4 "PP0/PP1 RAPL Domains"
+#define MSR_PP0_ENERGY_STATUS           0x639
+#define MSR_PP0_POLICY                  0x63A
+#define MSR_PP0_PERF_STATUS             0x63B
+#endif 
+
+// Second-generation Core Sandy Bridge          // Section 14.7.4 "PP0/PP1 RAPL Domains"
+#ifdef ARCH_062A                                
+#define MSR_TURBO_RATIO_LIMIT           0x1AD   
+#define MSR_PP1_POWER_LIMIT             0x640
+#define MSR_PP1_ENERGY_STATUS           0x641
+#define MSR_PP1_POLICY                  0x642
+#endif
+
+// Second-generation Xeon Sandy Bridge          // Section 14.7.5 "DRAM RAPL Domain"
+#ifdef ARCH_062D
+#define MSR_DRAM_POWER_LIMIT            0x618   
+#define MSR_DRAM_ENERGY_STATUS          0x619
+#define MSR_DRAM_PERF_STATUS            0x61B
+#define MSR_DRAM_POWER_INFO             0x61C
+#endif
+
 #ifdef ARCH_SANDY_BRIDGE
 struct power_units{
 	unsigned char time;
