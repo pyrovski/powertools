@@ -24,7 +24,7 @@ spin(uint64_t i){
 
 static void
 test_power_meters(){
-	struct power_units units;
+	struct power_unit units;
 	struct power_info info[NUM_DOMAINS];
 	double joules[NUM_DOMAINS]; 
 	struct timeval now;
