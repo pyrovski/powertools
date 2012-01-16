@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <sys/time.h>
+#include "msr_core.h"
 #ifndef MSR_RAPL_H
 #define MSR_RAPL_H
 /* Power Units (bits 3:0):  Power related information 
@@ -78,7 +80,7 @@
 #endif
 
 #ifdef ARCH_SANDY_BRIDGE
-struct power_units{
+struct power_unit{
 	unsigned char time;
 	unsigned char energy;
 	unsigned char power;
@@ -121,13 +123,13 @@ void get_raw_power_info( 	int cpu, int domain, 	uint64_t *pval      );
 void get_raw_perf_status( 	int cpu, int domain,	uint64_t *pstatus   );		
 void get_raw_policy( 		int cpu, int domain, 	uint64_t *priority  );
 
-void get_energy_status(		int cpu, int domain, 	double *joules, 		struct power_units *units);
-void get_power_limit( 		int cpu, int domain, 	struct power_limit *limit, 	struct power_units *units);
-void get_power_info(		int cpu, int domain, 	struct power_info *info, 	struct power_units *units);
-void get_perf_status(		int cpu, int domain, 	double *pstatus_sec, 		struct power_units *units);	
+void get_energy_status(		int cpu, int domain, 	double *joules, 		struct power_unit *units);
+void get_power_limit( 		int cpu, int domain, 	struct power_limit *limit, 	struct power_unit *units);
+void get_power_info(		int cpu, int domain, 	struct power_info *info, 	struct power_unit *units);
+void get_perf_status(		int cpu, int domain, 	double *pstatus_sec, 		struct power_unit *units);	
 void get_policy( 		int cpu, int domain, 	uint64_t *ppolicy 					 );
 
-void get_rapl_power_unit(	int cpu, 		struct power_units *p				         );
+void get_rapl_power_unit(	int cpu, 		struct power_unit *p				         );
 
 
 // set
@@ -150,6 +152,26 @@ enum{
 	NUM_DOMAINS
 };
 
+
+struct rapl_state{
+	struct timeval start;
+	struct timeval finish;
+	double elapsed;
+	double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
+	double energy_status[NUM_PACKAGES][NUM_DOMAINS];
+	struct power_limit power_limit[NUM_PACKAGES][NUM_DOMAINS];
+	struct power_unit  power_unit[NUM_PACKAGES];
+	struct power_info  power_info[NUM_PACKAGES][NUM_DOMAINS];
+	/*
+	double perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
+	double perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
+	uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
+	*/
+};
+
+
+
+	
 
 #endif //ARCH_SANDY_BRIDGE
 

@@ -4,37 +4,8 @@
 #include "msr_common.h"
 #include "msr_core.h"
 #include "msr_rapl.h"
-
-// MSRs common to 062A and 062D.
-#ifdef ARCH_SANDY_BRIDGE
-#define MSR_RAPL_POWER_UNIT		0x606	// (pkg) Section 14.7.1 "RAPL Interfaces"
-#define MSR_PKG_POWER_LIMIT		0x610 	// Section 14.7.3 "Package RAPL Domain"
-#define MSR_PKG_ENERGY_STATUS		0x611
-#ifdef PKG_PERF_STATUS_AVAILABLE				
-#define MSR_PKG_PERF_STATUS		0x613	// aka MSR_PKG_RAPL_PERF_STATUS, uncertain availability.
-#endif
-#define MSR_PKG_POWER_INFO		0x614
-#define MSR_PP0_POWER_LIMIT		0x638	// Section 14.7.4 "PP0/PP1 RAPL Domains"
-#define MSR_PP0_ENERGY_STATUS		0x639
-#define MSR_PP0_POLICY			0x63A
-#define MSR_PP0_PERF_STATUS		0x63B
-#endif 
-
-// Second-generation Core Sandy Bridge 		// Section 14.7.4 "PP0/PP1 RAPL Domains"
-#ifdef ARCH_062A				
-#define MSR_TURBO_RATIO_LIMIT		0x1AD	
-#define MSR_PP1_POWER_LIMIT		0x640
-#define MSR_PP1_ENERGY_STATUS		0x641
-#define MSR_PP1_POLICY			0x642
-#endif
-
-// Second-generation Xeon Sandy Bridge		// Section 14.7.5 "DRAM RAPL Domain"
-#ifdef ARCH_062D
-#define MSR_DRAM_POWER_LIMIT		0x618	
-#define MSR_DRAM_ENERGY_STATUS		0x619
-#define MSR_DRAM_PERF_STATUS		0x61B
-#define MSR_DRAM_POWER_INFO		0x61C
-#endif
+#include "msr_opt.h"
+#include "blr_util.h"
 
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
@@ -49,7 +20,7 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
 #ifdef ARCH_SANDY_BRIDGE
 void
-get_rapl_power_unit(int cpu, struct power_units *units){
+get_rapl_power_unit(int cpu, struct power_unit *units){
 	uint64_t val;
 	read_msr( cpu, MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
@@ -107,16 +78,19 @@ get_raw_energy_status( int cpu, int domain, uint64_t *raw_joules ){
 }
 
 void
-get_energy_status(int cpu, int domain, double *joules, struct power_units *units ){
+get_energy_status(int cpu, int domain, double *joules, struct power_unit *units ){
+	// FIXME This does not handle wraparound.  Need to figure out what MaxJoules is.
 	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( cpu, domain, &current_joules );
 	delta_joules = current_joules - last_joules[cpu][domain];	
 	last_joules[cpu][domain] = current_joules;
-	*joules = UNIT_SCALE(delta_joules, units->energy);
-	if(msr_debug){
-		fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
-				__FILE__, __LINE__, domain2str(domain), *joules);
+	if(joules != NULL){
+		*joules = UNIT_SCALE(delta_joules, units->energy);
+		if(msr_debug){
+			fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
+					__FILE__, __LINE__, domain2str(domain), *joules);
+		}
 	}
 }
 
@@ -135,7 +109,7 @@ get_raw_power_info( int cpu, int domain, uint64_t *pval ){
 }
 
 void
-get_power_info( int cpu, int domain, struct power_info *info, struct power_units *units ){
+get_power_info( int cpu, int domain, struct power_info *info, struct power_unit *units ){
 	uint64_t val;
 	get_raw_power_info( cpu, domain, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
@@ -236,7 +210,7 @@ set_power_limit( int cpu, int domain, struct power_limit *limit ){
 
 
 void
-get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_units *units ){
+get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_unit *units ){
 	uint64_t val;
 	get_raw_power_limit( cpu, domain, &val );
 
@@ -359,7 +333,7 @@ get_raw_perf_status( int cpu, int domain, uint64_t *pstatus ){
 }
 
 void
-get_perf_status( int cpu, int domain, double *pstatus, struct power_units *units ){
+get_perf_status( int cpu, int domain, double *pstatus, struct power_unit *units ){
 	uint64_t status;
 	get_raw_perf_status( cpu, domain, &status );
 	status = MASK_VAL(status, 31, 0);
@@ -412,4 +386,240 @@ set_policy( int cpu, int domain, uint64_t policy ){
 	set_raw_policy( cpu, domain, policy );
 }
 
+
+struct rapl_state * 
+init_rapl(int argc, char **argv){
+	static struct rapl_state s;
+	int cpu;
+	init_msr();
+	parse_opts( argc, argv );
+
+	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+		get_rapl_power_unit( cpu, &(s.power_unit[cpu]) );
+		get_power_info(    cpu, PKG_DOMAIN,  &(s.power_info[cpu][PKG_DOMAIN]),          &(s.power_unit[cpu]) );
+		get_power_info(    cpu, DRAM_DOMAIN, &(s.power_info[cpu][DRAM_DOMAIN]),         &(s.power_unit[cpu]) );
+		
+		get_power_limit(   cpu, PKG_DOMAIN,  &(s.power_limit[cpu][PKG_DOMAIN]),         &(s.power_unit[cpu]) );
+		get_power_limit(   cpu, PP0_DOMAIN,  &(s.power_limit[cpu][PP0_DOMAIN]),         &(s.power_unit[cpu]) );
+		get_power_limit(   cpu, DRAM_DOMAIN, &(s.power_limit[cpu][DRAM_DOMAIN]),        &(s.power_unit[cpu]) );
+
+		//get_perf_status(   cpu, PKG_DOMAIN,  &(s.perf_status_start[cpu][PKG_DOMAIN]),   &(s.power_unit[cpu]) );
+		//get_perf_status(   cpu, DRAM_DOMAIN, &(s.perf_status_start[cpu][PKG_DOMAIN]),   &(s.power_unit[cpu]) );
+
+		get_energy_status( cpu, PKG_DOMAIN,  NULL, &(s.power_unit[cpu]) );
+		get_energy_status( cpu, PP0_DOMAIN,  NULL, &(s.power_unit[cpu]) );
+		get_energy_status( cpu, DRAM_DOMAIN, NULL, &(s.power_unit[cpu]) );
+
+	}
+	gettimeofday( &(s.start), NULL );
+	return &s;
+}
+
+void
+finalize_rapl( struct rapl_state *s ){
+
+	int cpu;
+	gettimeofday( &(s->finish), NULL );
+	s->elapsed = ts_delta( &(s->start), &(s->finish) );
+	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+		//get_perf_status(   cpu, PKG_DOMAIN,  &(s->perf_status_finish[cpu][PKG_DOMAIN]),   &(s->power_unit[cpu]) );
+		//get_perf_status(   cpu, DRAM_DOMAIN, &(s->perf_status_finish[cpu][PKG_DOMAIN]),   &(s->power_unit[cpu]) );
+
+		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
+		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
+		get_energy_status( cpu, DRAM_DOMAIN, &(s->energy_status[cpu][DRAM_DOMAIN]),&(s->power_unit[cpu]) );
+		s->avg_watts[cpu][PKG_DOMAIN] = joules2watts( s->energy_status[cpu][PKG_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[cpu][PP0_DOMAIN] = joules2watts( s->energy_status[cpu][PP0_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[cpu][DRAM_DOMAIN] = joules2watts( s->energy_status[cpu][DRAM_DOMAIN], &(s->start), &(s->finish) );
+
+		// Rest all limits.
+		write_msr( cpu, MSR_PKG_POWER_LIMIT, 0 );
+		write_msr( cpu, MSR_PP0_POWER_LIMIT, 0 );
+		write_msr( cpu, MSR_DRAM_POWER_LIMIT, 0 );
+	}
+/*
+struct rapl_state{
+        struct power_unit power_unit[NUM_PACKAGES];                                                 
+        struct power_info  power_info[NUM_PACKAGES][NUM_DOMAINS];                                     
+        struct power_limit power_limit[NUM_PACKAGES][NUM_DOMAINS];                                    
+        double energy_status[NUM_PACKAGES][NUM_DOMAINS];                                      
+	*unused* uint64_t perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
+	*unused* uint64_t perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
+        *unused* uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
+        struct timeval start;
+        struct timeval finish;
+        double elapsed;
+        double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
+}; 
+*/
+	// Now the print statement from hell.
+	
+	//
+	// Time 
+	//
+	fprintf(stderr, "%s %s %s ",
+		"start",
+		"finish",
+		"elapsed");
+	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+
+		//
+		// Avg Watts
+		//
+		fprintf(stderr, "%s_%d %s_%d %s_%d ",
+				"PKG_Watts",		cpu,
+			       	"PP0_Watts", 		cpu,
+				"DRAM_Watts",		cpu);
+				
+		
+		// 	
+		// UNITS
+		//
+
+		fprintf( stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"Units_Power_Bits",		cpu, 
+			"Units_Energy_Bits",		cpu, 
+			"Units_Time_Bits",		cpu, 
+			"Units_Power_Watts",		cpu, 
+			"Units_Energy_Joules",		cpu, 
+			"Units_Time_Seconds",		cpu);
+
+
+		//
+		// LIMITS -- PKG Window 2
+		//
+		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"PKG_Limit2_Enable",		cpu,
+		       	"PKG_Limit2_Clamp",		cpu,
+		       	"PKG_Limit2_Time_Bits",		cpu,
+		       	"PKG_Limit2_Power_Bits",	cpu,
+		       	"PKG_Limit2_Mult_Bits", 	cpu,
+			"PKG_Limit2_Mult_Float",	cpu,
+		       	"PKG_Limit2_Time_Seconds", 	cpu,
+			"PKG_Limt2_Power_Watts", 	cpu); 
+			
+		//
+		// LIMITS -- PKG Window 1
+		//
+		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"PKG_Limit1_Enable",		cpu,
+		       	"PKG_Limit1_Clamp",		cpu,
+		       	"PKG_Limit1_Time_Bits",		cpu,
+		       	"PKG_Limit1_Power_Bits",	cpu,
+		       	"PKG_Limit1_Mult_Bits", 	cpu,
+			"PKG_Limit1_Mult_Float",	cpu,
+		       	"PKG_Limit1_Time_Seconds", 	cpu,
+			"PKG_Limt1_Power_Watts", 	cpu); 
+			
+		//
+		// LIMITS -- PP0 Window
+		//
+		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"PP0_Limit1_Enable",		cpu,
+		       	"PP0_Limit1_Clamp",		cpu,
+		       	"PP0_Limit1_Time_Bits",		cpu,
+		       	"PP0_Limit1_Power_Bits",	cpu,
+		       	"PP0_Limit1_Mult_Bits", 	cpu,
+			"PP0_Limit1_Mult_Float",	cpu,
+		       	"PP0_Limit1_Time_Seconds", 	cpu,
+			"PP0_Limt1_Power_Watts", 	cpu); 
+
+		//
+		// LIMITS -- DRAM Window
+		//
+		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"DRAM_Limit1_Enable",		cpu,
+		       	"DRAM_Limit1_Clamp",		cpu,
+		       	"DRAM_Limit1_Time_Bits",		cpu,
+		       	"DRAM_Limit1_Power_Bits",	cpu,
+		       	"DRAM_Limit1_Mult_Bits", 	cpu,
+			"DRAM_Limit1_Mult_Float",	cpu,
+		       	"DRAM_Limit1_Time_Seconds", 	cpu,
+			"DRAM_Limt1_Power_Watts", 	cpu); 
+	}
+			
+	//
+	// Done
+	//
+	fprintf(stderr, "\n");
+
+	// Now the data on the following line....
+
+	fprintf(stderr, "%ld.%06ld, %ld.%06ld, %lf",
+		s->start.tv_sec, s->start.tv_usec,
+		s->finish.tv_sec, s->finish.tv_usec,
+		s->elapsed);
+
+	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+			
+		fprintf(stderr, "%lf %lf %lf ", 
+			s->avg_watts[cpu][PKG_DOMAIN],
+			s->avg_watts[cpu][PP0_DOMAIN],
+			s->avg_watts[cpu][DRAM_DOMAIN]);
+
+		fprintf( stderr, "%d %d %d %lf %lf %lf", 
+			s->power_unit[cpu].power, 
+			s->power_unit[cpu].energy, 
+			s->power_unit[cpu].time, 
+			UNIT_SCALE(1, s->power_unit[cpu].power), 
+			UNIT_SCALE(1, s->power_unit[cpu].energy), 
+			UNIT_SCALE(1, s->power_unit[cpu].time));
+		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+			s->power_limit[cpu][PKG_DOMAIN].clamp_2, 
+			s->power_limit[cpu][PKG_DOMAIN].enable_2, 
+			s->power_limit[cpu][PKG_DOMAIN].time_window_2, 
+			s->power_limit[cpu][PKG_DOMAIN].power_limit_2, 
+			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_2, 
+			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_2, 
+			s->power_limit[cpu][PKG_DOMAIN].time_window_2_sec, 
+			s->power_limit[cpu][PKG_DOMAIN].power_limit_2_watts);
+
+		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+			s->power_limit[cpu][PKG_DOMAIN].clamp_1, 
+			s->power_limit[cpu][PKG_DOMAIN].enable_1, 
+			s->power_limit[cpu][PKG_DOMAIN].time_window_1, 
+			s->power_limit[cpu][PKG_DOMAIN].power_limit_1, 
+			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_1, 
+			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_1, 
+			s->power_limit[cpu][PKG_DOMAIN].time_window_1_sec, 
+			s->power_limit[cpu][PKG_DOMAIN].power_limit_1_watts);
+				
+		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+			s->power_limit[cpu][PP0_DOMAIN].clamp_1, 
+			s->power_limit[cpu][PP0_DOMAIN].enable_1, 
+			s->power_limit[cpu][PP0_DOMAIN].time_window_1, 
+			s->power_limit[cpu][PP0_DOMAIN].power_limit_1, 
+			s->power_limit[cpu][PP0_DOMAIN].time_multiplier_1, 
+			s->power_limit[cpu][PP0_DOMAIN].time_multiplier_float_1, 
+			s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
+			s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
+
+		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+			s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].time_window_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].power_limit_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_float_1, 
+			s->power_limit[cpu][DRAM_DOMAIN].time_window_1_sec, 
+			s->power_limit[cpu][DRAM_DOMAIN].power_limit_1_watts);
+				
+
+	}
+	fprintf(stderr, "\n");
+}
+
+/*
+ * Domain       Power   Energy  Policy  Perf    Power
+ *              Limit   Status          Status  Info
+ * --------------------------------------------------
+ *  PKG         RW      R       n       n*      R
+ *  DRAM        RW+     R+      n       R+      R+
+ *  PP0         RW      R       RW      n       n
+ *  PP1         RW-     R-      RW-     n       n
+ *
+ */
+
 #endif //ARCH_SANDY_BRIDGE
+
+
