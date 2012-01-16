@@ -388,11 +388,12 @@ set_policy( int cpu, int domain, uint64_t policy ){
 
 
 struct rapl_state * 
-init_rapl(int argc, char **argv){
+rapl_init(int argc, char **argv, FILE *f){
 	static struct rapl_state s;
 	int cpu;
 	init_msr();
 	parse_opts( argc, argv );
+	s.f = f;
 
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
 		get_rapl_power_unit( cpu, &(s.power_unit[cpu]) );
@@ -416,7 +417,7 @@ init_rapl(int argc, char **argv){
 }
 
 void
-finalize_rapl( struct rapl_state *s ){
+rapl_finalize( struct rapl_state *s ){
 
 	int cpu;
 	gettimeofday( &(s->finish), NULL );
@@ -437,36 +438,20 @@ finalize_rapl( struct rapl_state *s ){
 		write_msr( cpu, MSR_PP0_POWER_LIMIT, 0 );
 		write_msr( cpu, MSR_DRAM_POWER_LIMIT, 0 );
 	}
-/*
-struct rapl_state{
-        struct power_unit power_unit[NUM_PACKAGES];                                                 
-        struct power_info  power_info[NUM_PACKAGES][NUM_DOMAINS];                                     
-        struct power_limit power_limit[NUM_PACKAGES][NUM_DOMAINS];                                    
-        double energy_status[NUM_PACKAGES][NUM_DOMAINS];                                      
-	*unused* uint64_t perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
-	*unused* uint64_t perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
-        *unused* uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
-        struct timeval start;
-        struct timeval finish;
-        double elapsed;
-        double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
-}; 
-*/
+	
 	// Now the print statement from hell.
 	
 	//
 	// Time 
 	//
-	fprintf(stderr, "%s %s %s ",
-		"start",
-		"finish",
-		"elapsed");
+	fprintf(s->f, "%s ",
+		"# elapsed");
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
 
 		//
 		// Avg Watts
 		//
-		fprintf(stderr, "%s_%d %s_%d %s_%d ",
+		fprintf(s->f, "%s_%d %s_%d %s_%d ",
 				"PKG_Watts",		cpu,
 			       	"PP0_Watts", 		cpu,
 				"DRAM_Watts",		cpu);
@@ -476,7 +461,7 @@ struct rapl_state{
 		// UNITS
 		//
 
-		fprintf( stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+		fprintf( s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"Units_Power_Bits",		cpu, 
 			"Units_Energy_Bits",		cpu, 
 			"Units_Time_Bits",		cpu, 
@@ -488,7 +473,7 @@ struct rapl_state{
 		//
 		// LIMITS -- PKG Window 2
 		//
-		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"PKG_Limit2_Enable",		cpu,
 		       	"PKG_Limit2_Clamp",		cpu,
 		       	"PKG_Limit2_Time_Bits",		cpu,
@@ -501,7 +486,7 @@ struct rapl_state{
 		//
 		// LIMITS -- PKG Window 1
 		//
-		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"PKG_Limit1_Enable",		cpu,
 		       	"PKG_Limit1_Clamp",		cpu,
 		       	"PKG_Limit1_Time_Bits",		cpu,
@@ -514,7 +499,7 @@ struct rapl_state{
 		//
 		// LIMITS -- PP0 Window
 		//
-		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"PP0_Limit1_Enable",		cpu,
 		       	"PP0_Limit1_Clamp",		cpu,
 		       	"PP0_Limit1_Time_Bits",		cpu,
@@ -527,7 +512,7 @@ struct rapl_state{
 		//
 		// LIMITS -- DRAM Window
 		//
-		fprintf(stderr, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"DRAM_Limit1_Enable",		cpu,
 		       	"DRAM_Limit1_Clamp",		cpu,
 		       	"DRAM_Limit1_Time_Bits",		cpu,
@@ -541,30 +526,28 @@ struct rapl_state{
 	//
 	// Done
 	//
-	fprintf(stderr, "\n");
+	fprintf(s->f, "\n");
 
 	// Now the data on the following line....
 
-	fprintf(stderr, "%ld.%06ld, %ld.%06ld, %lf",
-		s->start.tv_sec, s->start.tv_usec,
-		s->finish.tv_sec, s->finish.tv_usec,
+	fprintf(s->f, "%lf ",
 		s->elapsed);
 
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
 			
-		fprintf(stderr, "%lf %lf %lf ", 
+		fprintf(s->f, "%lf %lf %lf ", 
 			s->avg_watts[cpu][PKG_DOMAIN],
 			s->avg_watts[cpu][PP0_DOMAIN],
 			s->avg_watts[cpu][DRAM_DOMAIN]);
 
-		fprintf( stderr, "%d %d %d %lf %lf %lf", 
+		fprintf( s->f, "%d %d %d %lf %lf %lf ", 
 			s->power_unit[cpu].power, 
 			s->power_unit[cpu].energy, 
 			s->power_unit[cpu].time, 
 			UNIT_SCALE(1, s->power_unit[cpu].power), 
 			UNIT_SCALE(1, s->power_unit[cpu].energy), 
 			UNIT_SCALE(1, s->power_unit[cpu].time));
-		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
 			s->power_limit[cpu][PKG_DOMAIN].clamp_2, 
 			s->power_limit[cpu][PKG_DOMAIN].enable_2, 
 			s->power_limit[cpu][PKG_DOMAIN].time_window_2, 
@@ -574,7 +557,7 @@ struct rapl_state{
 			s->power_limit[cpu][PKG_DOMAIN].time_window_2_sec, 
 			s->power_limit[cpu][PKG_DOMAIN].power_limit_2_watts);
 
-		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
 			s->power_limit[cpu][PKG_DOMAIN].clamp_1, 
 			s->power_limit[cpu][PKG_DOMAIN].enable_1, 
 			s->power_limit[cpu][PKG_DOMAIN].time_window_1, 
@@ -584,7 +567,7 @@ struct rapl_state{
 			s->power_limit[cpu][PKG_DOMAIN].time_window_1_sec, 
 			s->power_limit[cpu][PKG_DOMAIN].power_limit_1_watts);
 				
-		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
 			s->power_limit[cpu][PP0_DOMAIN].clamp_1, 
 			s->power_limit[cpu][PP0_DOMAIN].enable_1, 
 			s->power_limit[cpu][PP0_DOMAIN].time_window_1, 
@@ -594,7 +577,7 @@ struct rapl_state{
 			s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
 			s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
 
-		fprintf(stderr, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
 			s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
 			s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
 			s->power_limit[cpu][DRAM_DOMAIN].time_window_1, 
@@ -606,19 +589,9 @@ struct rapl_state{
 				
 
 	}
-	fprintf(stderr, "\n");
+	fprintf(s->f, "\n");
+	fclose(s->f);
 }
-
-/*
- * Domain       Power   Energy  Policy  Perf    Power
- *              Limit   Status          Status  Info
- * --------------------------------------------------
- *  PKG         RW      R       n       n*      R
- *  DRAM        RW+     R+      n       R+      R+
- *  PP0         RW      R       RW      n       n
- *  PP1         RW-     R-      RW-     n       n
- *
- */
 
 #endif //ARCH_SANDY_BRIDGE
 

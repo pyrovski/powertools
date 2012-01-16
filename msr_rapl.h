@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <sys/time.h>
 #include "msr_core.h"
@@ -116,6 +117,12 @@ struct power_limit{
 	double time_multiplier_float_2;
 };
 
+struct rapl_state *
+rapl_init( int argc, char **argv, FILE *f );
+
+void 
+rapl_finalize( struct rapl_state *s );
+
 // get
 void get_raw_energy_status(	int cpu, int domain, 	uint64_t *raw_joules);
 void get_raw_pkg_power_limit( 	int cpu, 		uint64_t *pval      );		
@@ -154,6 +161,7 @@ enum{
 
 
 struct rapl_state{
+	FILE *f;
 	struct timeval start;
 	struct timeval finish;
 	double elapsed;
