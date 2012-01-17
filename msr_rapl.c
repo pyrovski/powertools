@@ -397,6 +397,7 @@ rapl_init(int argc, char **argv, FILE *f){
 	int cpu;
 	init_msr();
 	parse_opts( argc, argv );
+	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
 	s.f = f;
 
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){

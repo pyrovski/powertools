@@ -8,11 +8,13 @@ ts_delta(struct timeval *start, struct timeval *stop){
 }
 
 FILE *
-safe_mkstemp( const char *hostname, const char *slurm_job_name, int rank ){
+safe_mkstemp( const char *hostname, const char *tag, int mpi_rank ){
 	FILE *f;
 	int fd=-1;
 	char filename[1024];
-	sprintf(filename, "%s_%s_%04d__XXXXXX", hostname, slurm_job_name, rank);
+	char *benchmark;
+	benchmark = getenv("BLR_BENCHMARK");
+	sprintf(filename, "%s_%s_%s_%04d__XXXXXX", hostname, tag, benchmark, mpi_rank);
 	fprintf(stderr, "filename=%s\n", filename);
 	fd=mkstemp(filename);
 	if(fd==-1){
