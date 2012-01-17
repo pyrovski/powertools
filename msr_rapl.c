@@ -83,6 +83,10 @@ get_energy_status(int cpu, int domain, double *joules, struct power_unit *units 
 	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( cpu, domain, &current_joules );
+	// FIXME:  This will give a wrong answer if we've wrapped around multiple times.
+	if( current_joules < last_joules[cpu][domain]){
+		current_joules += 0x100000000;
+	}
 	delta_joules = current_joules - last_joules[cpu][domain];	
 	last_joules[cpu][domain] = current_joules;
 	if(joules != NULL){
@@ -481,7 +485,7 @@ rapl_finalize( struct rapl_state *s ){
 		       	"PKG_Limit2_Mult_Bits", 	cpu,
 			"PKG_Limit2_Mult_Float",	cpu,
 		       	"PKG_Limit2_Time_Seconds", 	cpu,
-			"PKG_Limt2_Power_Watts", 	cpu); 
+			"PKG_Limit2_Power_Watts", 	cpu); 
 			
 		//
 		// LIMITS -- PKG Window 1
@@ -494,7 +498,7 @@ rapl_finalize( struct rapl_state *s ){
 		       	"PKG_Limit1_Mult_Bits", 	cpu,
 			"PKG_Limit1_Mult_Float",	cpu,
 		       	"PKG_Limit1_Time_Seconds", 	cpu,
-			"PKG_Limt1_Power_Watts", 	cpu); 
+			"PKG_Limit1_Power_Watts", 	cpu); 
 			
 		//
 		// LIMITS -- PP0 Window
@@ -507,7 +511,7 @@ rapl_finalize( struct rapl_state *s ){
 		       	"PP0_Limit1_Mult_Bits", 	cpu,
 			"PP0_Limit1_Mult_Float",	cpu,
 		       	"PP0_Limit1_Time_Seconds", 	cpu,
-			"PP0_Limt1_Power_Watts", 	cpu); 
+			"PP0_Limit1_Power_Watts", 	cpu); 
 
 		//
 		// LIMITS -- DRAM Window
@@ -520,7 +524,7 @@ rapl_finalize( struct rapl_state *s ){
 		       	"DRAM_Limit1_Mult_Bits", 	cpu,
 			"DRAM_Limit1_Mult_Float",	cpu,
 		       	"DRAM_Limit1_Time_Seconds", 	cpu,
-			"DRAM_Limt1_Power_Watts", 	cpu); 
+			"DRAM_Limit1_Power_Watts", 	cpu); 
 	}
 			
 	//
