@@ -79,7 +79,6 @@ get_raw_energy_status( int cpu, int domain, uint64_t *raw_joules ){
 
 void
 get_energy_status(int cpu, int domain, double *joules, struct power_unit *units ){
-	// FIXME This does not handle wraparound.  Need to figure out what MaxJoules is.
 	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( cpu, domain, &current_joules );
@@ -409,9 +408,6 @@ rapl_init(int argc, char **argv, FILE *f){
 		get_power_limit(   cpu, PP0_DOMAIN,  &(s.power_limit[cpu][PP0_DOMAIN]),         &(s.power_unit[cpu]) );
 		get_power_limit(   cpu, DRAM_DOMAIN, &(s.power_limit[cpu][DRAM_DOMAIN]),        &(s.power_unit[cpu]) );
 
-		//get_perf_status(   cpu, PKG_DOMAIN,  &(s.perf_status_start[cpu][PKG_DOMAIN]),   &(s.power_unit[cpu]) );
-		//get_perf_status(   cpu, DRAM_DOMAIN, &(s.perf_status_start[cpu][PKG_DOMAIN]),   &(s.power_unit[cpu]) );
-
 		get_energy_status( cpu, PKG_DOMAIN,  NULL, &(s.power_unit[cpu]) );
 		get_energy_status( cpu, PP0_DOMAIN,  NULL, &(s.power_unit[cpu]) );
 		get_energy_status( cpu, DRAM_DOMAIN, NULL, &(s.power_unit[cpu]) );
@@ -428,8 +424,6 @@ rapl_finalize( struct rapl_state *s ){
 	gettimeofday( &(s->finish), NULL );
 	s->elapsed = ts_delta( &(s->start), &(s->finish) );
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-		//get_perf_status(   cpu, PKG_DOMAIN,  &(s->perf_status_finish[cpu][PKG_DOMAIN]),   &(s->power_unit[cpu]) );
-		//get_perf_status(   cpu, DRAM_DOMAIN, &(s->perf_status_finish[cpu][PKG_DOMAIN]),   &(s->power_unit[cpu]) );
 
 		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
 		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
@@ -461,6 +455,33 @@ rapl_finalize( struct rapl_state *s ){
 			       	"PP0_Watts", 		cpu,
 				"DRAM_Watts",		cpu);
 				
+		//
+		// INFO
+		//
+
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"PKG_Info_Max_Window_Sec",	cpu,
+			"PKG_Info_Max_Window_Bits",	cpu,
+			"PKG_Info_Max_Power_Watts", 	cpu,
+			"PKG_Info_Max_Power_Bits", 	cpu,
+			"PKG_Info_Min_Power_Watts",	cpu,
+			"PKG_Info_Min_Power_Bits",	cpu,
+			"PKG_Info_Thermal_Spec_Watts",	cpu,
+			"PKG_Info_Thermal_Spec_Bits",	cpu);
+
+
+		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+			"DRAM_Info_Max_Window_Sec",	cpu,
+			"DRAM_Info_Max_Window_Bits",	cpu,
+			"DRAM_Info_Max_Power_Watts", 	cpu,
+			"DRAM_Info_Max_Power_Bits", 	cpu,
+			"DRAM_Info_Min_Power_Watts",	cpu,
+			"DRAM_Info_Min_Power_Bits",	cpu,
+			"DRAM_Info_Thermal_Spec_Watts",	cpu,
+			"DRAM_Info_Thermal_Spec_Bits",	cpu);
+
+
+
 		
 		// 	
 		// UNITS
@@ -520,7 +541,7 @@ rapl_finalize( struct rapl_state *s ){
 		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 			"DRAM_Limit1_Enable",		cpu,
 		       	"DRAM_Limit1_Clamp",		cpu,
-		       	"DRAM_Limit1_Time_Bits",		cpu,
+		       	"DRAM_Limit1_Time_Bits",	cpu,
 		       	"DRAM_Limit1_Power_Bits",	cpu,
 		       	"DRAM_Limit1_Mult_Bits", 	cpu,
 			"DRAM_Limit1_Mult_Float",	cpu,
@@ -544,6 +565,27 @@ rapl_finalize( struct rapl_state *s ){
 			s->avg_watts[cpu][PKG_DOMAIN],
 			s->avg_watts[cpu][PP0_DOMAIN],
 			s->avg_watts[cpu][DRAM_DOMAIN]);
+
+		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
+			s->power_info[cpu][PKG_DOMAIN].max_time_window_sec,
+			s->power_info[cpu][PKG_DOMAIN].max_time_window,
+			s->power_info[cpu][PKG_DOMAIN].max_power_watts,
+			s->power_info[cpu][PKG_DOMAIN].max_power,
+			s->power_info[cpu][PKG_DOMAIN].min_power_watts,
+			s->power_info[cpu][PKG_DOMAIN].min_power,
+			s->power_info[cpu][PKG_DOMAIN].thermal_spec_power_watts,
+			s->power_info[cpu][PKG_DOMAIN].thermal_spec_power);
+
+
+		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
+			s->power_info[cpu][DRAM_DOMAIN].max_time_window_sec,
+			s->power_info[cpu][DRAM_DOMAIN].max_time_window,
+			s->power_info[cpu][DRAM_DOMAIN].max_power_watts,
+			s->power_info[cpu][DRAM_DOMAIN].max_power,
+			s->power_info[cpu][DRAM_DOMAIN].min_power_watts,
+			s->power_info[cpu][DRAM_DOMAIN].min_power,
+			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power_watts,
+			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power);
 
 		fprintf( s->f, "%d %d %d %lf %lf %lf ", 
 			s->power_unit[cpu].power, 

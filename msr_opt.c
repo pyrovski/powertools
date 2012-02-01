@@ -76,17 +76,17 @@ parse_opts( int argc, char **argv ){
 		if( msr_pkg_power_limit != -1 ){
 			fprintf(stderr, "%s::%d setting %s to 0x%lx on cpu %d\n", 
 				__FILE__, __LINE__, msr2str(MSR_PKG_POWER_LIMIT), msr_pkg_power_limit, cpu);
-			write_msr( cpu, c, msr_pkg_power_limit );
+			write_msr( cpu, MSR_PKG_POWER_LIMIT, msr_pkg_power_limit );
 		}
 		if( msr_pp0_power_limit != -1 ){
 			fprintf(stderr, "%s::%d setting %s to 0x%lx on cpu %d\n", 
 				__FILE__, __LINE__, msr2str(MSR_PP0_POWER_LIMIT), msr_pp0_power_limit, cpu);
-			write_msr( cpu, c, msr_pp0_power_limit );
+			write_msr( cpu, MSR_PP0_POWER_LIMIT, msr_pp0_power_limit );
 		}
 		if( msr_dram_power_limit != -1 ){
 			fprintf(stderr, "%s::%d setting %s to 0x%lx on cpu %d\n", 
 				__FILE__, __LINE__, msr2str(MSR_DRAM_POWER_LIMIT), msr_dram_power_limit, cpu);
-			write_msr( cpu, c, msr_dram_power_limit );
+			write_msr( cpu, MSR_DRAM_POWER_LIMIT, msr_dram_power_limit );
 		}
 	}
 }

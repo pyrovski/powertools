@@ -1,4 +1,4 @@
-#include <stdlib.h>		// mkstmp
+#include <stdlib.h>		// mkstmp, getenv
 #include <unistd.h>		// close
 #include "blr_util.h"
 
@@ -26,3 +26,10 @@ safe_mkstemp( const char *hostname, const char *tag, int mpi_rank ){
 	return f;
 }
 
+void get_env_int(const char *name, int *val){
+	char *str;
+	str = getenv(name);
+	*val = (int) strtol(str, (char **)NULL, 0);
+}
+
+	
