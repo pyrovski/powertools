@@ -5,17 +5,12 @@ target=msr
 
 DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062D -DPKG_PERF_STATUS_AVAILABLE
 
-<<<<<<< HEAD
 ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
 endif
 
-$(target): msr_rapl msr_core msr_common msr_pebs blr_util msr_turbo
-	mpicc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o msr_common.o msr_core.o 
-=======
-test_harness: msr_rapl msr_core msr_common msr_pebs blr_util msr_turbo msr_opt blr_util
-	mpicc -fPIC -Wall ${DEFINES} -o msr msr_opt.o msr_pebs.c msr_rapl.o msr_common.o msr_core.o blr_util.o
->>>>>>> ea24572b3912346e8ea05e5a677f5956f8c4b915
+$(target): msr_rapl msr_core msr_common msr_pebs blr_util msr_turbo msr_opt blr_util
+	mpicc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o msr_common.o msr_core.o msr_opt.o blr_util.o
 msr_common: msr_rapl msr_common.c msr_common.h Makefile
 	mpicc -fPIC -Wall ${DEFINES} -c msr_common.c
 msr_core: msr_core.c msr_core.h Makefile
