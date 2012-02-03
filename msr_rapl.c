@@ -409,16 +409,21 @@ rapl_init(int argc, char **argv, FILE *f){
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
 		get_rapl_power_unit( cpu, &(s.power_unit[cpu]) );
 		get_power_info(    cpu, PKG_DOMAIN,  &(s.power_info[cpu][PKG_DOMAIN]),          &(s.power_unit[cpu]) );
+#ifdef ARCH_062D
 		get_power_info(    cpu, DRAM_DOMAIN, &(s.power_info[cpu][DRAM_DOMAIN]),         &(s.power_unit[cpu]) );
-		
+#endif
+
 		get_power_limit(   cpu, PKG_DOMAIN,  &(s.power_limit[cpu][PKG_DOMAIN]),         &(s.power_unit[cpu]) );
 		get_power_limit(   cpu, PP0_DOMAIN,  &(s.power_limit[cpu][PP0_DOMAIN]),         &(s.power_unit[cpu]) );
+#ifdef ARCH_062D
 		get_power_limit(   cpu, DRAM_DOMAIN, &(s.power_limit[cpu][DRAM_DOMAIN]),        &(s.power_unit[cpu]) );
+#endif
 
 		get_energy_status( cpu, PKG_DOMAIN,  NULL, &(s.power_unit[cpu]) );
 		get_energy_status( cpu, PP0_DOMAIN,  NULL, &(s.power_unit[cpu]) );
+#ifdef ARCH_062D
 		get_energy_status( cpu, DRAM_DOMAIN, NULL, &(s.power_unit[cpu]) );
-
+#endif
 	}
 	gettimeofday( &(s.start), NULL );
 	return &s;
@@ -434,15 +439,21 @@ rapl_finalize( struct rapl_state *s ){
 
 		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
 		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
+#ifdef ARCH_062D
 		get_energy_status( cpu, DRAM_DOMAIN, &(s->energy_status[cpu][DRAM_DOMAIN]),&(s->power_unit[cpu]) );
+#endif
 		s->avg_watts[cpu][PKG_DOMAIN] = joules2watts( s->energy_status[cpu][PKG_DOMAIN], &(s->start), &(s->finish) );
 		s->avg_watts[cpu][PP0_DOMAIN] = joules2watts( s->energy_status[cpu][PP0_DOMAIN], &(s->start), &(s->finish) );
+#ifdef ARCH_062D
 		s->avg_watts[cpu][DRAM_DOMAIN] = joules2watts( s->energy_status[cpu][DRAM_DOMAIN], &(s->start), &(s->finish) );
+#endif
 
 		// Rest all limits.
 		write_msr( cpu, MSR_PKG_POWER_LIMIT, 0 );
 		write_msr( cpu, MSR_PP0_POWER_LIMIT, 0 );
+#ifdef ARCH_062D
 		write_msr( cpu, MSR_DRAM_POWER_LIMIT, 0 );
+#endif
 	}
 	
 	// Now the print statement from hell.
@@ -542,6 +553,7 @@ rapl_finalize( struct rapl_state *s ){
 		       	"PP0_Limit1_Time_Seconds", 	cpu,
 			"PP0_Limit1_Power_Watts", 	cpu); 
 
+#ifdef ARCH_062D
 		//
 		// LIMITS -- DRAM Window
 		//
@@ -554,6 +566,7 @@ rapl_finalize( struct rapl_state *s ){
 			"DRAM_Limit1_Mult_Float",	cpu,
 		       	"DRAM_Limit1_Time_Seconds", 	cpu,
 			"DRAM_Limit1_Power_Watts", 	cpu); 
+#endif
 	}
 			
 	//
@@ -568,10 +581,12 @@ rapl_finalize( struct rapl_state *s ){
 
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
 			
-		fprintf(s->f, "%lf %lf %lf ", 
+		fprintf(s->f, "%lf %lf ", 
 			s->avg_watts[cpu][PKG_DOMAIN],
-			s->avg_watts[cpu][PP0_DOMAIN],
-			s->avg_watts[cpu][DRAM_DOMAIN]);
+			s->avg_watts[cpu][PP0_DOMAIN]);
+#ifdef ARCH_062D
+		fprintf(s->f, "%lf ", s->avg_watts[cpu][DRAM_DOMAIN]);
+#endif
 
 		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
 			s->power_info[cpu][PKG_DOMAIN].max_time_window_sec,
@@ -584,6 +599,7 @@ rapl_finalize( struct rapl_state *s ){
 			s->power_info[cpu][PKG_DOMAIN].thermal_spec_power);
 
 
+#ifdef ARCH_062D
 		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
 			s->power_info[cpu][DRAM_DOMAIN].max_time_window_sec,
 			s->power_info[cpu][DRAM_DOMAIN].max_time_window,
@@ -593,6 +609,7 @@ rapl_finalize( struct rapl_state *s ){
 			s->power_info[cpu][DRAM_DOMAIN].min_power,
 			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power_watts,
 			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power);
+#endif
 
 		fprintf( s->f, "%d %d %d %lf %lf %lf ", 
 			s->power_unit[cpu].power, 
@@ -631,6 +648,7 @@ rapl_finalize( struct rapl_state *s ){
 			s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
 			s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
 
+#ifdef ARCH_062D
 		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
 			s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
 			s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
@@ -640,7 +658,7 @@ rapl_finalize( struct rapl_state *s ){
 			s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_float_1, 
 			s->power_limit[cpu][DRAM_DOMAIN].time_window_1_sec, 
 			s->power_limit[cpu][DRAM_DOMAIN].power_limit_1_watts);
-				
+#endif				
 
 	}
 	fprintf(s->f, "\n");

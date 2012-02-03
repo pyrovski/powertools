@@ -8,7 +8,9 @@
 static struct option long_options[] = {
 	{"MSR_PKG_POWER_LIMIT",		1, 0, MSR_PKG_POWER_LIMIT}, 	// RW
 	{"MSR_PP0_POWER_LIMIT",		1, 0, MSR_PP0_POWER_LIMIT},	// RW
+#ifdef ARCH_062D
 	{"MSR_DRAM_POWER_LIMIT",	1, 0, MSR_DRAM_POWER_LIMIT},	// RW
+#endif
 	{ 0,				0, 0, 0}
  };
 
@@ -17,7 +19,9 @@ msr2str( uint64_t msr ){
 	switch(msr){
 		case MSR_PKG_POWER_LIMIT:	return "MSR_PKG_POWER_LIMIT";	break;	
 		case MSR_PP0_POWER_LIMIT:	return "MSR_PP0_POWER_LIMIT";	break;
+#ifdef ARCH_062D
 		case MSR_DRAM_POWER_LIMIT:	return "MSR_DRAM_POWER_LIMIT";	break;
+#endif
 		default:			return "WTF?";			break;
 	}
 	return "Probably should never be seeing this.";
@@ -62,9 +66,11 @@ parse_opts( int argc, char **argv ){
 			case MSR_PP0_POWER_LIMIT:	
 				msr_pp0_power_limit = strtoll( optarg, NULL, 0 );
 				break;
+#ifdef ARCH_062D
 			case MSR_DRAM_POWER_LIMIT:
 				msr_dram_power_limit = strtoll( optarg, NULL, 0 );
 				break;
+#endif
 			default:
 				break;
 		}
@@ -83,11 +89,13 @@ parse_opts( int argc, char **argv ){
 				__FILE__, __LINE__, msr2str(MSR_PP0_POWER_LIMIT), msr_pp0_power_limit, cpu);
 			write_msr( cpu, MSR_PP0_POWER_LIMIT, msr_pp0_power_limit );
 		}
+#ifdef ARCH_062D
 		if( msr_dram_power_limit != -1 ){
 			fprintf(stderr, "%s::%d setting %s to 0x%lx on cpu %d\n", 
 				__FILE__, __LINE__, msr2str(MSR_DRAM_POWER_LIMIT), msr_dram_power_limit, cpu);
 			write_msr( cpu, MSR_DRAM_POWER_LIMIT, msr_dram_power_limit );
 		}
+#endif
 	}
 }
 
