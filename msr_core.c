@@ -23,6 +23,10 @@ void
 init_msr(){
 	int i;
 	char filename[1025];
+	static int initialized = 0;
+	if( initialized ){
+		return;
+	}
 	for (i=0; i<NUM_PACKAGES; i++){
 		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
 		fd[i] = open( filename, O_RDWR );
@@ -31,6 +35,7 @@ init_msr(){
 			perror(filename);
 		}
 	}
+	initialized = 1;
 }
 
 void 
