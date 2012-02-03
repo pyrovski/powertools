@@ -28,9 +28,6 @@ blr_util: blr_util.h blr_util.c Makefile
 clean:
 	rm -f *.o $(target)
 
-lib:
-	mkdir -p lib
-
 zin:
 	srun -n 1 -p asde ./msr
 

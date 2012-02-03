@@ -1,12 +1,16 @@
 all:	rapl
 
-rapl:
+
+../lib:
+	mkdir -p ../lib
+
+rapl: ../lib rapl.w wrap.py
 	./wrap.py -f -g -o rapl.c rapl.w
 	mpicc -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c rapl.c -o rapl.o
-	mpicc -shared -Wl,-soname,librapl.so -o ../lib/librapl.so ../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../msr_opt.o rapl.o 
-	mpicc -L../lib -o harness.rapl harness.c -lrapl
+	mpicc -shared -Wl,-soname,librapl.so -o ../lib/librapl.so ../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../msr_opt.o rapl.o
+	mpicc -L../lib -o harness.rapl harness.c -Xlinker -rpath ../lib/ -lrapl
 
-noturbo:
+noturbo: ../lib noturbo.w
 	./wrap.py -f -g -o noturbo.c noturbo.w
 	mpicc -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c noturbo.c -o noturbo.o
 	mpicc -shared -Wl,-soname,libnoturbo.so -o ../lib/libnoturbo.so ../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../msr_opt.o noturbo.o 
