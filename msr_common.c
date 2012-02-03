@@ -28,7 +28,9 @@ test_power_meters(){
 	struct power_info info[NUM_DOMAINS];
 	double joules[NUM_DOMAINS]; 
 	struct timeval now;
+#ifdef ARCH_062D
 	int i;
+#endif
 	msr_debug=0;
 	get_rapl_power_unit(0, &units);
 

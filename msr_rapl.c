@@ -196,10 +196,17 @@ set_power_limit( int cpu, int domain, struct power_limit *limit ){
 		    |  (0x7FFF & limit->power_limit_2)	<< 32
 		    |  (0x0001 & limit->clamp_2)	<< 48
 		    |  (0x0001 & limit->enable_2)	<< 47;
-	}else if(domain == DRAM_DOMAIN){
+	}
+#ifdef ARCH_062D
+	else if(domain == DRAM_DOMAIN){
 		val |= limit->lock		<< 32;
 	}
-	if( domain == PKG_DOMAIN || domain == DRAM_DOMAIN ){
+#endif
+	if( domain == PKG_DOMAIN
+#ifdef ARCH_062D
+	    || domain == DRAM_DOMAIN
+#endif
+	    ){
 		val |= (0x007F & limit->time_window_1)	<< 17
 		    |  (0x7FFF & limit->power_limit_1)	<<  0
 		    |  (0x0001 & limit->clamp_1)	<< 16
