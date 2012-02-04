@@ -27,8 +27,8 @@ $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o 
 	gcc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o msr_common.o msr_core.o msr_opt.o blr_util.o
 
 install: $(library)
-	install -m 0444 -t $(HOME)/local/include msr_rapl.h msr_core.h blr_util.h
-	install -m 0444 -t $(HOME)/local/include $(library)
+	install -m 0644 -t $(HOME)/local/include msr_rapl.h msr_core.h blr_util.h
+	install -m 0644 -t $(HOME)/local/lib $(library)
 
 $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o
 	gcc -shared -Wl,-soname,$(library) -o $(library) $^
