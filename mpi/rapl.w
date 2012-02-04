@@ -11,7 +11,7 @@ static int rank;
 static char hostname[1025];
 extern int msr_debug;
 static FILE* f;
-struct rapl_state *s;
+struct rapl_state_s *s;
 
 static int msr_rank_mod=1;
 

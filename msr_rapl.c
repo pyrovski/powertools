@@ -397,9 +397,9 @@ set_policy( int cpu, int domain, uint64_t policy ){
 }
 
 
-struct rapl_state * 
+struct rapl_state_s * 
 rapl_init(int argc, char **argv, FILE *f){
-	static struct rapl_state s;
+	static struct rapl_state_s s;
 	int cpu;
 	init_msr();
 	parse_opts( argc, argv );
@@ -430,7 +430,7 @@ rapl_init(int argc, char **argv, FILE *f){
 }
 
 void
-rapl_finalize( struct rapl_state *s ){
+rapl_finalize( struct rapl_state_s *s ){
 
 	int cpu;
 	gettimeofday( &(s->finish), NULL );
