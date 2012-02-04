@@ -31,7 +31,7 @@ init_msr(){
 		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
 		fd[i] = open( filename, O_RDWR );
 		if(fd[i] == -1){
-			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", __FILE__, __LINE__, i);
+			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", __FILE__, __LINE__, i*NUM_CORES_PER_PACKAGE);
 			perror(filename);
 		}
 	}
