@@ -30,7 +30,7 @@ install: $(library)
 	install -m 0644 -t $(HOME)/local/include msr_rapl.h msr_core.h blr_util.h
 	install -m 0644 -t $(HOME)/local/lib $(library)
 
-$(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o
+$(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o
 	gcc -shared -Wl,-soname,$(library) -o $(library) $^
 
 clean:
