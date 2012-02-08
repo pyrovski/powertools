@@ -7,6 +7,10 @@
 #include "msr_opt.h"
 #include "blr_util.h"
 
+static void print_rapl_state(struct rapl_state_s *s);
+static void print_rapl_state_header(struct rapl_state_s *s);
+
+
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
@@ -455,216 +459,235 @@ rapl_finalize( struct rapl_state_s *s ){
 		write_msr( cpu, MSR_DRAM_POWER_LIMIT, 0 );
 #endif
 	}
-	
+
 	// Now the print statement from hell.
 	
-	//
-	// Time 
-	//
-	fprintf(s->f, "%s ",
-		"# elapsed");
-	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-
-		//
-		// Avg Watts
-		//
-		fprintf(s->f, "%s_%d %s_%d %s_%d ",
-				"PKG_Watts",		cpu,
-			       	"PP0_Watts", 		cpu,
-				"DRAM_Watts",		cpu);
-				
-		//
-		// INFO
-		//
-
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"PKG_Info_Max_Window_Sec",	cpu,
-			"PKG_Info_Max_Window_Bits",	cpu,
-			"PKG_Info_Max_Power_Watts", 	cpu,
-			"PKG_Info_Max_Power_Bits", 	cpu,
-			"PKG_Info_Min_Power_Watts",	cpu,
-			"PKG_Info_Min_Power_Bits",	cpu,
-			"PKG_Info_Thermal_Spec_Watts",	cpu,
-			"PKG_Info_Thermal_Spec_Bits",	cpu);
-
-
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"DRAM_Info_Max_Window_Sec",	cpu,
-			"DRAM_Info_Max_Window_Bits",	cpu,
-			"DRAM_Info_Max_Power_Watts", 	cpu,
-			"DRAM_Info_Max_Power_Bits", 	cpu,
-			"DRAM_Info_Min_Power_Watts",	cpu,
-			"DRAM_Info_Min_Power_Bits",	cpu,
-			"DRAM_Info_Thermal_Spec_Watts",	cpu,
-			"DRAM_Info_Thermal_Spec_Bits",	cpu);
-
-
-
-		
-		// 	
-		// UNITS
-		//
-
-		fprintf( s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"Units_Power_Bits",		cpu, 
-			"Units_Energy_Bits",		cpu, 
-			"Units_Time_Bits",		cpu, 
-			"Units_Power_Watts",		cpu, 
-			"Units_Energy_Joules",		cpu, 
-			"Units_Time_Seconds",		cpu);
-
-
-		//
-		// LIMITS -- PKG Window 2
-		//
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"PKG_Limit2_Enable",		cpu,
-		       	"PKG_Limit2_Clamp",		cpu,
-		       	"PKG_Limit2_Time_Bits",		cpu,
-		       	"PKG_Limit2_Power_Bits",	cpu,
-		       	"PKG_Limit2_Mult_Bits", 	cpu,
-			"PKG_Limit2_Mult_Float",	cpu,
-		       	"PKG_Limit2_Time_Seconds", 	cpu,
-			"PKG_Limit2_Power_Watts", 	cpu); 
-			
-		//
-		// LIMITS -- PKG Window 1
-		//
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"PKG_Limit1_Enable",		cpu,
-		       	"PKG_Limit1_Clamp",		cpu,
-		       	"PKG_Limit1_Time_Bits",		cpu,
-		       	"PKG_Limit1_Power_Bits",	cpu,
-		       	"PKG_Limit1_Mult_Bits", 	cpu,
-			"PKG_Limit1_Mult_Float",	cpu,
-		       	"PKG_Limit1_Time_Seconds", 	cpu,
-			"PKG_Limit1_Power_Watts", 	cpu); 
-			
-		//
-		// LIMITS -- PP0 Window
-		//
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"PP0_Limit1_Enable",		cpu,
-		       	"PP0_Limit1_Clamp",		cpu,
-		       	"PP0_Limit1_Time_Bits",		cpu,
-		       	"PP0_Limit1_Power_Bits",	cpu,
-		       	"PP0_Limit1_Mult_Bits", 	cpu,
-			"PP0_Limit1_Mult_Float",	cpu,
-		       	"PP0_Limit1_Time_Seconds", 	cpu,
-			"PP0_Limit1_Power_Watts", 	cpu); 
-
-#ifdef ARCH_062D
-		//
-		// LIMITS -- DRAM Window
-		//
-		fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-			"DRAM_Limit1_Enable",		cpu,
-		       	"DRAM_Limit1_Clamp",		cpu,
-		       	"DRAM_Limit1_Time_Bits",	cpu,
-		       	"DRAM_Limit1_Power_Bits",	cpu,
-		       	"DRAM_Limit1_Mult_Bits", 	cpu,
-			"DRAM_Limit1_Mult_Float",	cpu,
-		       	"DRAM_Limit1_Time_Seconds", 	cpu,
-			"DRAM_Limit1_Power_Watts", 	cpu); 
-#endif
-	}
-			
-	//
-	// Done
-	//
-	fprintf(s->f, "\n");
-
-	// Now the data on the following line....
-
-	fprintf(s->f, "%lf ",
-		s->elapsed);
-
-	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-			
-		fprintf(s->f, "%lf %lf ", 
-			s->avg_watts[cpu][PKG_DOMAIN],
-			s->avg_watts[cpu][PP0_DOMAIN]);
-#ifdef ARCH_062D
-		fprintf(s->f, "%lf ", s->avg_watts[cpu][DRAM_DOMAIN]);
-#endif
-
-		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
-			s->power_info[cpu][PKG_DOMAIN].max_time_window_sec,
-			s->power_info[cpu][PKG_DOMAIN].max_time_window,
-			s->power_info[cpu][PKG_DOMAIN].max_power_watts,
-			s->power_info[cpu][PKG_DOMAIN].max_power,
-			s->power_info[cpu][PKG_DOMAIN].min_power_watts,
-			s->power_info[cpu][PKG_DOMAIN].min_power,
-			s->power_info[cpu][PKG_DOMAIN].thermal_spec_power_watts,
-			s->power_info[cpu][PKG_DOMAIN].thermal_spec_power);
-
-
-#ifdef ARCH_062D
-		fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
-			s->power_info[cpu][DRAM_DOMAIN].max_time_window_sec,
-			s->power_info[cpu][DRAM_DOMAIN].max_time_window,
-			s->power_info[cpu][DRAM_DOMAIN].max_power_watts,
-			s->power_info[cpu][DRAM_DOMAIN].max_power,
-			s->power_info[cpu][DRAM_DOMAIN].min_power_watts,
-			s->power_info[cpu][DRAM_DOMAIN].min_power,
-			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power_watts,
-			s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power);
-#endif
-
-		fprintf( s->f, "%d %d %d %lf %lf %lf ", 
-			s->power_unit[cpu].power, 
-			s->power_unit[cpu].energy, 
-			s->power_unit[cpu].time, 
-			UNIT_SCALE(1, s->power_unit[cpu].power), 
-			UNIT_SCALE(1, s->power_unit[cpu].energy), 
-			UNIT_SCALE(1, s->power_unit[cpu].time));
-		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-			s->power_limit[cpu][PKG_DOMAIN].clamp_2, 
-			s->power_limit[cpu][PKG_DOMAIN].enable_2, 
-			s->power_limit[cpu][PKG_DOMAIN].time_window_2, 
-			s->power_limit[cpu][PKG_DOMAIN].power_limit_2, 
-			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_2, 
-			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_2, 
-			s->power_limit[cpu][PKG_DOMAIN].time_window_2_sec, 
-			s->power_limit[cpu][PKG_DOMAIN].power_limit_2_watts);
-
-		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-			s->power_limit[cpu][PKG_DOMAIN].clamp_1, 
-			s->power_limit[cpu][PKG_DOMAIN].enable_1, 
-			s->power_limit[cpu][PKG_DOMAIN].time_window_1, 
-			s->power_limit[cpu][PKG_DOMAIN].power_limit_1, 
-			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_1, 
-			s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_1, 
-			s->power_limit[cpu][PKG_DOMAIN].time_window_1_sec, 
-			s->power_limit[cpu][PKG_DOMAIN].power_limit_1_watts);
-				
-		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-			s->power_limit[cpu][PP0_DOMAIN].clamp_1, 
-			s->power_limit[cpu][PP0_DOMAIN].enable_1, 
-			s->power_limit[cpu][PP0_DOMAIN].time_window_1, 
-			s->power_limit[cpu][PP0_DOMAIN].power_limit_1, 
-			s->power_limit[cpu][PP0_DOMAIN].time_multiplier_1, 
-			s->power_limit[cpu][PP0_DOMAIN].time_multiplier_float_1, 
-			s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
-			s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
-
-#ifdef ARCH_062D
-		fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-			s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].time_window_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].power_limit_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_float_1, 
-			s->power_limit[cpu][DRAM_DOMAIN].time_window_1_sec, 
-			s->power_limit[cpu][DRAM_DOMAIN].power_limit_1_watts);
-#endif				
-
-	}
-	fprintf(s->f, "\n");
+	print_rapl_state_header(s);
+	print_rapl_state(s);
 	fclose(s->f);
 }
 
 #endif //ARCH_SANDY_BRIDGE
 
 
+static void print_rapl_state(struct rapl_state_s *s){
+  
+  assert(s);
+  assert(s->f);
+
+  int cpu;
+  
+  // Now the data on the following line....
+
+  fprintf(s->f, "%lf ",
+	  s->elapsed);
+
+  for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+			
+    fprintf(s->f, "%lf %lf ", 
+	    s->avg_watts[cpu][PKG_DOMAIN],
+	    s->avg_watts[cpu][PP0_DOMAIN]);
+#ifdef ARCH_062D
+    fprintf(s->f, "%lf ", s->avg_watts[cpu][DRAM_DOMAIN]);
+#endif
+
+    fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
+	    s->power_info[cpu][PKG_DOMAIN].max_time_window_sec,
+	    s->power_info[cpu][PKG_DOMAIN].max_time_window,
+	    s->power_info[cpu][PKG_DOMAIN].max_power_watts,
+	    s->power_info[cpu][PKG_DOMAIN].max_power,
+	    s->power_info[cpu][PKG_DOMAIN].min_power_watts,
+	    s->power_info[cpu][PKG_DOMAIN].min_power,
+	    s->power_info[cpu][PKG_DOMAIN].thermal_spec_power_watts,
+	    s->power_info[cpu][PKG_DOMAIN].thermal_spec_power);
+
+
+#ifdef ARCH_062D
+    fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
+	    s->power_info[cpu][DRAM_DOMAIN].max_time_window_sec,
+	    s->power_info[cpu][DRAM_DOMAIN].max_time_window,
+	    s->power_info[cpu][DRAM_DOMAIN].max_power_watts,
+	    s->power_info[cpu][DRAM_DOMAIN].max_power,
+	    s->power_info[cpu][DRAM_DOMAIN].min_power_watts,
+	    s->power_info[cpu][DRAM_DOMAIN].min_power,
+	    s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power_watts,
+	    s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power);
+#endif
+
+    fprintf( s->f, "%d %d %d %lf %lf %lf ", 
+	     s->power_unit[cpu].power, 
+	     s->power_unit[cpu].energy, 
+	     s->power_unit[cpu].time, 
+	     UNIT_SCALE(1, s->power_unit[cpu].power), 
+	     UNIT_SCALE(1, s->power_unit[cpu].energy), 
+	     UNIT_SCALE(1, s->power_unit[cpu].time));
+    fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+	    s->power_limit[cpu][PKG_DOMAIN].clamp_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].enable_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_window_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].power_limit_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_2, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_window_2_sec, 
+	    s->power_limit[cpu][PKG_DOMAIN].power_limit_2_watts);
+
+    fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+	    s->power_limit[cpu][PKG_DOMAIN].clamp_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].enable_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_window_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].power_limit_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[cpu][PKG_DOMAIN].time_window_1_sec, 
+	    s->power_limit[cpu][PKG_DOMAIN].power_limit_1_watts);
+				
+    fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+	    s->power_limit[cpu][PP0_DOMAIN].clamp_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].enable_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].time_window_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].power_limit_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].time_multiplier_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
+	    s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
+
+#ifdef ARCH_062D
+    fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
+	    s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].time_window_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].power_limit_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[cpu][DRAM_DOMAIN].time_window_1_sec, 
+	    s->power_limit[cpu][DRAM_DOMAIN].power_limit_1_watts);
+#endif				
+
+  }
+  fprintf(s->f, "\n");
+
+}
+
+static void print_rapl_state_header(struct rapl_state_s *s){
+
+  assert(s);
+  assert(s->f);
+
+  int cpu;
+  
+  //
+  // Time 
+  //
+  fprintf(s->f, "%s ",
+	  "# elapsed");
+  for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+
+    //
+    // Avg Watts
+    //
+    fprintf(s->f, "%s_%d %s_%d %s_%d ",
+	    "PKG_Watts",		cpu,
+	    "PP0_Watts", 		cpu,
+	    "DRAM_Watts",		cpu);
+				
+    //
+    // INFO
+    //
+
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "PKG_Info_Max_Window_Sec",	cpu,
+	    "PKG_Info_Max_Window_Bits",	cpu,
+	    "PKG_Info_Max_Power_Watts", 	cpu,
+	    "PKG_Info_Max_Power_Bits", 	cpu,
+	    "PKG_Info_Min_Power_Watts",	cpu,
+	    "PKG_Info_Min_Power_Bits",	cpu,
+	    "PKG_Info_Thermal_Spec_Watts",	cpu,
+	    "PKG_Info_Thermal_Spec_Bits",	cpu);
+
+
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "DRAM_Info_Max_Window_Sec",	cpu,
+	    "DRAM_Info_Max_Window_Bits",	cpu,
+	    "DRAM_Info_Max_Power_Watts", 	cpu,
+	    "DRAM_Info_Max_Power_Bits", 	cpu,
+	    "DRAM_Info_Min_Power_Watts",	cpu,
+	    "DRAM_Info_Min_Power_Bits",	cpu,
+	    "DRAM_Info_Thermal_Spec_Watts",	cpu,
+	    "DRAM_Info_Thermal_Spec_Bits",	cpu);
+
+
+
+		
+    // 	
+    // UNITS
+    //
+
+    fprintf( s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	     "Units_Power_Bits",		cpu, 
+	     "Units_Energy_Bits",		cpu, 
+	     "Units_Time_Bits",		cpu, 
+	     "Units_Power_Watts",		cpu, 
+	     "Units_Energy_Joules",		cpu, 
+	     "Units_Time_Seconds",		cpu);
+
+
+    //
+    // LIMITS -- PKG Window 2
+    //
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "PKG_Limit2_Enable",		cpu,
+	    "PKG_Limit2_Clamp",		cpu,
+	    "PKG_Limit2_Time_Bits",		cpu,
+	    "PKG_Limit2_Power_Bits",	cpu,
+	    "PKG_Limit2_Mult_Bits", 	cpu,
+	    "PKG_Limit2_Mult_Float",	cpu,
+	    "PKG_Limit2_Time_Seconds", 	cpu,
+	    "PKG_Limit2_Power_Watts", 	cpu); 
+			
+    //
+    // LIMITS -- PKG Window 1
+    //
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "PKG_Limit1_Enable",		cpu,
+	    "PKG_Limit1_Clamp",		cpu,
+	    "PKG_Limit1_Time_Bits",		cpu,
+	    "PKG_Limit1_Power_Bits",	cpu,
+	    "PKG_Limit1_Mult_Bits", 	cpu,
+	    "PKG_Limit1_Mult_Float",	cpu,
+	    "PKG_Limit1_Time_Seconds", 	cpu,
+	    "PKG_Limit1_Power_Watts", 	cpu); 
+			
+    //
+    // LIMITS -- PP0 Window
+    //
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "PP0_Limit1_Enable",		cpu,
+	    "PP0_Limit1_Clamp",		cpu,
+	    "PP0_Limit1_Time_Bits",		cpu,
+	    "PP0_Limit1_Power_Bits",	cpu,
+	    "PP0_Limit1_Mult_Bits", 	cpu,
+	    "PP0_Limit1_Mult_Float",	cpu,
+	    "PP0_Limit1_Time_Seconds", 	cpu,
+	    "PP0_Limit1_Power_Watts", 	cpu); 
+
+#ifdef ARCH_062D
+    //
+    // LIMITS -- DRAM Window
+    //
+    fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
+	    "DRAM_Limit1_Enable",		cpu,
+	    "DRAM_Limit1_Clamp",		cpu,
+	    "DRAM_Limit1_Time_Bits",	cpu,
+	    "DRAM_Limit1_Power_Bits",	cpu,
+	    "DRAM_Limit1_Mult_Bits", 	cpu,
+	    "DRAM_Limit1_Mult_Float",	cpu,
+	    "DRAM_Limit1_Time_Seconds", 	cpu,
+	    "DRAM_Limit1_Power_Watts", 	cpu); 
+#endif
+  }
+			
+  //
+  // Done
+  //
+  fprintf(s->f, "\n");
+}
