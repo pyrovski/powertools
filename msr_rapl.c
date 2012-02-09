@@ -9,7 +9,7 @@
 
 static void print_rapl_state(struct rapl_state_s *s);
 static void print_rapl_state_header(struct rapl_state_s *s);
-static void get_all_status(int cpu, struct rapl_state_s *s);
+static void get_all_status(int socket, struct rapl_state_s *s);
 
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
@@ -24,9 +24,9 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
 #ifdef ARCH_SANDY_BRIDGE
 void
-get_rapl_power_unit(int cpu, struct power_unit *units){
+get_rapl_power_unit(int socket, struct power_unit *units){
 	uint64_t val;
-	read_msr( cpu, MSR_RAPL_POWER_UNIT, &val );
+	read_msr( socket, MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
 	//p->energy = (val & MASK_RANGE(12, 8) ); // page 14(29).
 	//p->time	  = (val & MASK_RANGE(19,16) );
@@ -58,18 +58,18 @@ domain2str( int domain ){
 }
 
 void
-get_raw_energy_status( int cpu, int domain, uint64_t *raw_joules ){
+get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
 	switch(domain){
-		case PKG_DOMAIN: 	read_msr( cpu, MSR_PKG_ENERGY_STATUS, raw_joules );	
+		case PKG_DOMAIN: 	read_msr( socket, MSR_PKG_ENERGY_STATUS, raw_joules );	
 					break;
-		case PP0_DOMAIN: 	read_msr( cpu, MSR_PP0_ENERGY_STATUS, raw_joules );	
+		case PP0_DOMAIN: 	read_msr( socket, MSR_PP0_ENERGY_STATUS, raw_joules );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	read_msr( cpu, MSR_PP1_ENERGY_STATUS, raw_joules );	
+		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_ENERGY_STATUS, raw_joules );	
 					break;
 #endif
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr( cpu, MSR_DRAM_ENERGY_STATUS, raw_joules );		
+		case DRAM_DOMAIN:	read_msr( socket, MSR_DRAM_ENERGY_STATUS, raw_joules );		
 				 	break;
 #endif
 		default: 		assert(0);						
@@ -82,16 +82,16 @@ get_raw_energy_status( int cpu, int domain, uint64_t *raw_joules ){
 }
 
 void
-get_energy_status(int cpu, int domain, double *joules, struct power_unit *units ){
+get_energy_status(int socket, int domain, double *joules, struct power_unit *units ){
 	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
 	uint64_t current_joules, delta_joules;
-	get_raw_energy_status( cpu, domain, &current_joules );
+	get_raw_energy_status( socket, domain, &current_joules );
 	// FIXME:  This will give a wrong answer if we've wrapped around multiple times.
-	if( current_joules < last_joules[cpu][domain]){
+	if( current_joules < last_joules[socket][domain]){
 		current_joules += 0x100000000;
 	}
-	delta_joules = current_joules - last_joules[cpu][domain];	
-	last_joules[cpu][domain] = current_joules;
+	delta_joules = current_joules - last_joules[socket][domain];	
+	last_joules[socket][domain] = current_joules;
 	if(joules != NULL){
 		*joules = UNIT_SCALE(delta_joules, units->energy);
 		if(msr_debug){
@@ -102,12 +102,12 @@ get_energy_status(int cpu, int domain, double *joules, struct power_unit *units 
 }
 
 void
-get_raw_power_info( int cpu, int domain, uint64_t *pval ){
+get_raw_power_info( int socket, int domain, uint64_t *pval ){
 	switch(domain){
-		case PKG_DOMAIN:	read_msr( cpu, MSR_PKG_POWER_INFO, pval );		
+		case PKG_DOMAIN:	read_msr( socket, MSR_PKG_POWER_INFO, pval );		
 					break;
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr( cpu, MSR_DRAM_POWER_INFO, pval );		
+		case DRAM_DOMAIN:	read_msr( socket, MSR_DRAM_POWER_INFO, pval );		
 					break;
 #endif
 		default:		assert(0); // Not avail for PP0/PP1 domains.
@@ -116,9 +116,9 @@ get_raw_power_info( int cpu, int domain, uint64_t *pval ){
 }
 
 void
-get_power_info( int cpu, int domain, struct power_info *info, struct power_unit *units ){
+get_power_info( int socket, int domain, struct power_info *info, struct power_unit *units ){
 	uint64_t val;
-	get_raw_power_info( cpu, domain, &val );
+	get_raw_power_info( socket, domain, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
 	info->max_power	   		= MASK_VAL(val,46,32);
 	info->min_power	   		= MASK_VAL(val,30,16);
@@ -152,18 +152,18 @@ get_power_info( int cpu, int domain, struct power_info *info, struct power_unit 
 }
 
 void
-get_raw_power_limit( int cpu, int domain, uint64_t *pval ){
+get_raw_power_limit( int socket, int domain, uint64_t *pval ){
 	switch(domain){
-		case PKG_DOMAIN: 	read_msr( cpu, MSR_PKG_POWER_LIMIT, pval );
+		case PKG_DOMAIN: 	read_msr( socket, MSR_PKG_POWER_LIMIT, pval );
 					break;
-		case PP0_DOMAIN: 	read_msr( cpu, MSR_PP0_POWER_LIMIT, pval );
+		case PP0_DOMAIN: 	read_msr( socket, MSR_PP0_POWER_LIMIT, pval );
 					break;
 #ifdef ARCH_062A				
-		case PP1_DOMAIN: 	read_msr( cpu, MSR_PP1_POWER_LIMIT, pval );
+		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_POWER_LIMIT, pval );
 					break;
 #endif
 #ifdef ARCH_062D				
-		case DRAM_DOMAIN: 	read_msr( cpu, MSR_DRAM_POWER_LIMIT, pval );
+		case DRAM_DOMAIN: 	read_msr( socket, MSR_DRAM_POWER_LIMIT, pval );
 					break;
 #endif
 		default:		assert(0);
@@ -172,18 +172,18 @@ get_raw_power_limit( int cpu, int domain, uint64_t *pval ){
 }
 
 void
-set_raw_power_limit( int cpu, int domain, uint64_t val ){
+set_raw_power_limit( int socket, int domain, uint64_t val ){
 	switch(domain){
-		case PKG_DOMAIN: 	write_msr( cpu, MSR_PKG_POWER_LIMIT, val );	
+		case PKG_DOMAIN: 	write_msr( socket, MSR_PKG_POWER_LIMIT, val );	
 					break;
-		case PP0_DOMAIN: 	write_msr( cpu, MSR_PP0_POWER_LIMIT, val );	
+		case PP0_DOMAIN: 	write_msr( socket, MSR_PP0_POWER_LIMIT, val );	
 					break;
 #ifdef ARCH_062A				
-		case PP1_DOMAIN: 	write_msr( cpu, MSR_PP1_POWER_LIMIT, val );	
+		case PP1_DOMAIN: 	write_msr( socket, MSR_PP1_POWER_LIMIT, val );	
 					break;
 #endif
 #ifdef ARCH_062D				
-		case DRAM_DOMAIN: 	write_msr( cpu, MSR_DRAM_POWER_LIMIT, val );	
+		case DRAM_DOMAIN: 	write_msr( socket, MSR_DRAM_POWER_LIMIT, val );	
 					break;
 #endif
 		default:		assert(0);					
@@ -192,7 +192,7 @@ set_raw_power_limit( int cpu, int domain, uint64_t val ){
 }
 
 void
-set_power_limit( int cpu, int domain, struct power_limit *limit ){
+set_power_limit( int socket, int domain, struct power_limit *limit ){
 	uint64_t val = 0;
 	if( domain == PKG_DOMAIN ){
 		val |= (0x0001 & limit->lock) 		<< 63
@@ -224,9 +224,9 @@ set_power_limit( int cpu, int domain, struct power_limit *limit ){
 
 
 void
-get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_unit *units ){
+get_power_limit( int socket, int domain, struct power_limit *limit, struct power_unit *units ){
 	uint64_t val;
-	get_raw_power_limit( cpu, domain, &val );
+	get_raw_power_limit( socket, domain, &val );
 
 	if(domain == PKG_DOMAIN){
 		limit->time_window_2	= MASK_VAL(val, 53, 49);
@@ -330,14 +330,14 @@ get_power_limit( int cpu, int domain, struct power_limit *limit, struct power_un
 }
 
 void
-get_raw_perf_status( int cpu, int domain, uint64_t *pstatus ){
+get_raw_perf_status( int socket, int domain, uint64_t *pstatus ){
 	switch(domain){
 #ifdef PKG_PERF_STATUS_AVAILABLE
-		case PKG_DOMAIN: 	read_msr(cpu, MSR_PKG_PERF_STATUS, pstatus);
+		case PKG_DOMAIN: 	read_msr(socket, MSR_PKG_PERF_STATUS, pstatus);
 						break;
 #endif
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr(cpu, MSR_DRAM_PERF_STATUS, pstatus);
+		case DRAM_DOMAIN:	read_msr(socket, MSR_DRAM_PERF_STATUS, pstatus);
 						break;
 #endif
 		default:			assert(0);
@@ -347,9 +347,9 @@ get_raw_perf_status( int cpu, int domain, uint64_t *pstatus ){
 }
 
 void
-get_perf_status( int cpu, int domain, double *pstatus, struct power_unit *units ){
+get_perf_status( int socket, int domain, double *pstatus, struct power_unit *units ){
 	uint64_t status;
-	get_raw_perf_status( cpu, domain, &status );
+	get_raw_perf_status( socket, domain, &status );
 	status = MASK_VAL(status, 31, 0);
 	*pstatus = UNIT_SCALE( status, units->time );
 	if(msr_debug){
@@ -359,12 +359,12 @@ get_perf_status( int cpu, int domain, double *pstatus, struct power_unit *units 
 }
 
 void
-get_raw_policy( int cpu, int domain, uint64_t *ppolicy ){
+get_raw_policy( int socket, int domain, uint64_t *ppolicy ){
 	switch( domain ){
-		case PP0_DOMAIN:	read_msr( cpu, MSR_PP0_POLICY, ppolicy );	
+		case PP0_DOMAIN:	read_msr( socket, MSR_PP0_POLICY, ppolicy );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	read_msr( cpu, MSR_PP1_POLICY, ppolicy );	
+		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_POLICY, ppolicy );	
 					break;
 #endif
 		default:		assert(0);
@@ -373,12 +373,12 @@ get_raw_policy( int cpu, int domain, uint64_t *ppolicy ){
 }
 
 void
-set_raw_policy( int cpu, int domain, uint64_t policy ){
+set_raw_policy( int socket, int domain, uint64_t policy ){
 	switch( domain ){
-		case PP0_DOMAIN:	write_msr( cpu, MSR_PP0_POLICY, policy );	
+		case PP0_DOMAIN:	write_msr( socket, MSR_PP0_POLICY, policy );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	write_msr( cpu, MSR_PP1_POLICY, policy );	
+		case PP1_DOMAIN: 	write_msr( socket, MSR_PP1_POLICY, policy );	
 					break;
 #endif
 		default:		assert(0);
@@ -387,8 +387,8 @@ set_raw_policy( int cpu, int domain, uint64_t policy ){
 }
 
 void
-get_policy( int cpu, int domain, uint64_t *ppolicy ){
-	get_raw_policy( cpu, domain, ppolicy );
+get_policy( int socket, int domain, uint64_t *ppolicy ){
+	get_raw_policy( socket, domain, ppolicy );
 	if(msr_debug){
 		fprintf(stderr, "%s::%d (%s) policy = 0x%lx (%lu)\n",
 				__FILE__, __LINE__, domain2str(domain), *ppolicy, *ppolicy );
@@ -396,37 +396,37 @@ get_policy( int cpu, int domain, uint64_t *ppolicy ){
 }
 
 void
-set_policy( int cpu, int domain, uint64_t policy ){
-	set_raw_policy( cpu, domain, policy );
+set_policy( int socket, int domain, uint64_t policy ){
+	set_raw_policy( socket, domain, policy );
 }
 
 
 struct rapl_state_s * 
 rapl_init(int argc, char **argv, FILE *f){
 	static struct rapl_state_s s;
-	int cpu;
+	int socket;
 	init_msr();
 	parse_opts( argc, argv );
 	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
 	s.f = f;
 
-	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-		get_rapl_power_unit( cpu, &(s.power_unit[cpu]) );
-		get_power_info(    cpu, PKG_DOMAIN,  &(s.power_info[cpu][PKG_DOMAIN]),          &(s.power_unit[cpu]) );
+	for(socket=0; socket<NUM_PACKAGES; socket++){
+		get_rapl_power_unit( socket, &(s.power_unit[socket]) );
+		get_power_info(    socket, PKG_DOMAIN,  &(s.power_info[socket][PKG_DOMAIN]),          &(s.power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_info(    cpu, DRAM_DOMAIN, &(s.power_info[cpu][DRAM_DOMAIN]),         &(s.power_unit[cpu]) );
+		get_power_info(    socket, DRAM_DOMAIN, &(s.power_info[socket][DRAM_DOMAIN]),         &(s.power_unit[socket]) );
 #endif
 
-		get_power_limit(   cpu, PKG_DOMAIN,  &(s.power_limit[cpu][PKG_DOMAIN]),         &(s.power_unit[cpu]) );
-		get_power_limit(   cpu, PP0_DOMAIN,  &(s.power_limit[cpu][PP0_DOMAIN]),         &(s.power_unit[cpu]) );
+		get_power_limit(   socket, PKG_DOMAIN,  &(s.power_limit[socket][PKG_DOMAIN]),         &(s.power_unit[socket]) );
+		get_power_limit(   socket, PP0_DOMAIN,  &(s.power_limit[socket][PP0_DOMAIN]),         &(s.power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_limit(   cpu, DRAM_DOMAIN, &(s.power_limit[cpu][DRAM_DOMAIN]),        &(s.power_unit[cpu]) );
+		get_power_limit(   socket, DRAM_DOMAIN, &(s.power_limit[socket][DRAM_DOMAIN]),        &(s.power_unit[socket]) );
 #endif
 
-		get_energy_status( cpu, PKG_DOMAIN,  NULL, &(s.power_unit[cpu]) );
-		get_energy_status( cpu, PP0_DOMAIN,  NULL, &(s.power_unit[cpu]) );
+		get_energy_status( socket, PKG_DOMAIN,  NULL, &(s.power_unit[socket]) );
+		get_energy_status( socket, PP0_DOMAIN,  NULL, &(s.power_unit[socket]) );
 #ifdef ARCH_062D
-		get_energy_status( cpu, DRAM_DOMAIN, NULL, &(s.power_unit[cpu]) );
+		get_energy_status( socket, DRAM_DOMAIN, NULL, &(s.power_unit[socket]) );
 #endif
 	}
 	gettimeofday( &(s.start), NULL );
@@ -436,17 +436,17 @@ rapl_init(int argc, char **argv, FILE *f){
 void
 rapl_finalize( struct rapl_state_s *s ){
 
-	int cpu;
+	int socket;
 	gettimeofday( &(s->finish), NULL );
 	s->elapsed = ts_delta( &(s->start), &(s->finish) );
-	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-		get_all_status(cpu, s);
+	for(socket=0; socket<NUM_PACKAGES; socket++){
+		get_all_status(socket, s);
 
 		// Rest all limits.
-		write_msr( cpu, MSR_PKG_POWER_LIMIT, 0 );
-		write_msr( cpu, MSR_PP0_POWER_LIMIT, 0 );
+		write_msr( socket, MSR_PKG_POWER_LIMIT, 0 );
+		write_msr( socket, MSR_PP0_POWER_LIMIT, 0 );
 #ifdef ARCH_062D
-		write_msr( cpu, MSR_DRAM_POWER_LIMIT, 0 );
+		write_msr( socket, MSR_DRAM_POWER_LIMIT, 0 );
 #endif
 	}
 
@@ -457,108 +457,108 @@ rapl_finalize( struct rapl_state_s *s ){
 	fclose(s->f);
 }
 
-static void get_all_status(int cpu, struct rapl_state_s *s){
-		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
-		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
+static void get_all_status(int socket, struct rapl_state_s *s){
+		get_energy_status( socket, PKG_DOMAIN,  &(s->energy_status[socket][PKG_DOMAIN]), &(s->power_unit[socket]) );
+		get_energy_status( socket, PP0_DOMAIN,  &(s->energy_status[socket][PP0_DOMAIN]), &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_energy_status( cpu, DRAM_DOMAIN, &(s->energy_status[cpu][DRAM_DOMAIN]),&(s->power_unit[cpu]) );
+		get_energy_status( socket, DRAM_DOMAIN, &(s->energy_status[socket][DRAM_DOMAIN]),&(s->power_unit[socket]) );
 #endif
-		s->avg_watts[cpu][PKG_DOMAIN] = joules2watts( s->energy_status[cpu][PKG_DOMAIN], &(s->start), &(s->finish) );
-		s->avg_watts[cpu][PP0_DOMAIN] = joules2watts( s->energy_status[cpu][PP0_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[socket][PKG_DOMAIN] = joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[socket][PP0_DOMAIN] = joules2watts( s->energy_status[socket][PP0_DOMAIN], &(s->start), &(s->finish) );
 #ifdef ARCH_062D
-		s->avg_watts[cpu][DRAM_DOMAIN] = joules2watts( s->energy_status[cpu][DRAM_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[socket][DRAM_DOMAIN] = joules2watts( s->energy_status[socket][DRAM_DOMAIN], &(s->start), &(s->finish) );
 #endif
 }
 
 
 static void print_rapl_state(struct rapl_state_s *s){
   
-  int cpu;
+  int socket;
   
   // Now the data on the following line....
 
   fprintf(s->f, "%lf ",
 	  s->elapsed);
 
-  for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+  for(socket=0; socket<NUM_PACKAGES; socket++){
 			
     fprintf(s->f, "%lf %lf ", 
-	    s->avg_watts[cpu][PKG_DOMAIN],
-	    s->avg_watts[cpu][PP0_DOMAIN]);
+	    s->avg_watts[socket][PKG_DOMAIN],
+	    s->avg_watts[socket][PP0_DOMAIN]);
 #ifdef ARCH_062D
-    fprintf(s->f, "%lf ", s->avg_watts[cpu][DRAM_DOMAIN]);
+    fprintf(s->f, "%lf ", s->avg_watts[socket][DRAM_DOMAIN]);
 #endif
 
     fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
-	    s->power_info[cpu][PKG_DOMAIN].max_time_window_sec,
-	    s->power_info[cpu][PKG_DOMAIN].max_time_window,
-	    s->power_info[cpu][PKG_DOMAIN].max_power_watts,
-	    s->power_info[cpu][PKG_DOMAIN].max_power,
-	    s->power_info[cpu][PKG_DOMAIN].min_power_watts,
-	    s->power_info[cpu][PKG_DOMAIN].min_power,
-	    s->power_info[cpu][PKG_DOMAIN].thermal_spec_power_watts,
-	    s->power_info[cpu][PKG_DOMAIN].thermal_spec_power);
+	    s->power_info[socket][PKG_DOMAIN].max_time_window_sec,
+	    s->power_info[socket][PKG_DOMAIN].max_time_window,
+	    s->power_info[socket][PKG_DOMAIN].max_power_watts,
+	    s->power_info[socket][PKG_DOMAIN].max_power,
+	    s->power_info[socket][PKG_DOMAIN].min_power_watts,
+	    s->power_info[socket][PKG_DOMAIN].min_power,
+	    s->power_info[socket][PKG_DOMAIN].thermal_spec_power_watts,
+	    s->power_info[socket][PKG_DOMAIN].thermal_spec_power);
 
 
 #ifdef ARCH_062D
     fprintf(s->f, "%lf %ld %lf %ld %lf %ld %lf %ld ",
-	    s->power_info[cpu][DRAM_DOMAIN].max_time_window_sec,
-	    s->power_info[cpu][DRAM_DOMAIN].max_time_window,
-	    s->power_info[cpu][DRAM_DOMAIN].max_power_watts,
-	    s->power_info[cpu][DRAM_DOMAIN].max_power,
-	    s->power_info[cpu][DRAM_DOMAIN].min_power_watts,
-	    s->power_info[cpu][DRAM_DOMAIN].min_power,
-	    s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power_watts,
-	    s->power_info[cpu][DRAM_DOMAIN].thermal_spec_power);
+	    s->power_info[socket][DRAM_DOMAIN].max_time_window_sec,
+	    s->power_info[socket][DRAM_DOMAIN].max_time_window,
+	    s->power_info[socket][DRAM_DOMAIN].max_power_watts,
+	    s->power_info[socket][DRAM_DOMAIN].max_power,
+	    s->power_info[socket][DRAM_DOMAIN].min_power_watts,
+	    s->power_info[socket][DRAM_DOMAIN].min_power,
+	    s->power_info[socket][DRAM_DOMAIN].thermal_spec_power_watts,
+	    s->power_info[socket][DRAM_DOMAIN].thermal_spec_power);
 #endif
 
     fprintf( s->f, "%d %d %d %lf %lf %lf ", 
-	     s->power_unit[cpu].power, 
-	     s->power_unit[cpu].energy, 
-	     s->power_unit[cpu].time, 
-	     UNIT_SCALE(1, s->power_unit[cpu].power), 
-	     UNIT_SCALE(1, s->power_unit[cpu].energy), 
-	     UNIT_SCALE(1, s->power_unit[cpu].time));
+	     s->power_unit[socket].power, 
+	     s->power_unit[socket].energy, 
+	     s->power_unit[socket].time, 
+	     UNIT_SCALE(1, s->power_unit[socket].power), 
+	     UNIT_SCALE(1, s->power_unit[socket].energy), 
+	     UNIT_SCALE(1, s->power_unit[socket].time));
     fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-	    s->power_limit[cpu][PKG_DOMAIN].clamp_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].enable_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_window_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].power_limit_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_2, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_window_2_sec, 
-	    s->power_limit[cpu][PKG_DOMAIN].power_limit_2_watts);
+	    s->power_limit[socket][PKG_DOMAIN].clamp_2, 
+	    s->power_limit[socket][PKG_DOMAIN].enable_2, 
+	    s->power_limit[socket][PKG_DOMAIN].time_window_2, 
+	    s->power_limit[socket][PKG_DOMAIN].power_limit_2, 
+	    s->power_limit[socket][PKG_DOMAIN].time_multiplier_2, 
+	    s->power_limit[socket][PKG_DOMAIN].time_multiplier_float_2, 
+	    s->power_limit[socket][PKG_DOMAIN].time_window_2_sec, 
+	    s->power_limit[socket][PKG_DOMAIN].power_limit_2_watts);
 
     fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-	    s->power_limit[cpu][PKG_DOMAIN].clamp_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].enable_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_window_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].power_limit_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_multiplier_float_1, 
-	    s->power_limit[cpu][PKG_DOMAIN].time_window_1_sec, 
-	    s->power_limit[cpu][PKG_DOMAIN].power_limit_1_watts);
+	    s->power_limit[socket][PKG_DOMAIN].clamp_1, 
+	    s->power_limit[socket][PKG_DOMAIN].enable_1, 
+	    s->power_limit[socket][PKG_DOMAIN].time_window_1, 
+	    s->power_limit[socket][PKG_DOMAIN].power_limit_1, 
+	    s->power_limit[socket][PKG_DOMAIN].time_multiplier_1, 
+	    s->power_limit[socket][PKG_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[socket][PKG_DOMAIN].time_window_1_sec, 
+	    s->power_limit[socket][PKG_DOMAIN].power_limit_1_watts);
 				
     fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-	    s->power_limit[cpu][PP0_DOMAIN].clamp_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].enable_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].time_window_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].power_limit_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].time_multiplier_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].time_multiplier_float_1, 
-	    s->power_limit[cpu][PP0_DOMAIN].time_window_1_sec, 
-	    s->power_limit[cpu][PP0_DOMAIN].power_limit_1_watts);
+	    s->power_limit[socket][PP0_DOMAIN].clamp_1, 
+	    s->power_limit[socket][PP0_DOMAIN].enable_1, 
+	    s->power_limit[socket][PP0_DOMAIN].time_window_1, 
+	    s->power_limit[socket][PP0_DOMAIN].power_limit_1, 
+	    s->power_limit[socket][PP0_DOMAIN].time_multiplier_1, 
+	    s->power_limit[socket][PP0_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[socket][PP0_DOMAIN].time_window_1_sec, 
+	    s->power_limit[socket][PP0_DOMAIN].power_limit_1_watts);
 
 #ifdef ARCH_062D
     fprintf(s->f, "%lu %lu %lu %lu %lu %lf %lf %lf ", 
-	    s->power_limit[cpu][DRAM_DOMAIN].clamp_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].enable_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].time_window_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].power_limit_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].time_multiplier_float_1, 
-	    s->power_limit[cpu][DRAM_DOMAIN].time_window_1_sec, 
-	    s->power_limit[cpu][DRAM_DOMAIN].power_limit_1_watts);
+	    s->power_limit[socket][DRAM_DOMAIN].clamp_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].enable_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].time_window_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].power_limit_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].time_multiplier_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].time_multiplier_float_1, 
+	    s->power_limit[socket][DRAM_DOMAIN].time_window_1_sec, 
+	    s->power_limit[socket][DRAM_DOMAIN].power_limit_1_watts);
 #endif				
 
   }
@@ -568,47 +568,47 @@ static void print_rapl_state(struct rapl_state_s *s){
 
 static void print_rapl_state_header(struct rapl_state_s *s){
 
-  int cpu;
+  int socket;
   
   //
   // Time 
   //
   fprintf(s->f, "%s ",
 	  "# elapsed");
-  for(cpu=0; cpu<NUM_PACKAGES; cpu++){
+  for(socket=0; socket<NUM_PACKAGES; socket++){
 
     //
     // Avg Watts
     //
     fprintf(s->f, "%s_%d %s_%d %s_%d ",
-	    "PKG_Watts",		cpu,
-	    "PP0_Watts", 		cpu,
-	    "DRAM_Watts",		cpu);
+	    "PKG_Watts",		socket,
+	    "PP0_Watts", 		socket,
+	    "DRAM_Watts",		socket);
 				
     //
     // INFO
     //
 
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "PKG_Info_Max_Window_Sec",	cpu,
-	    "PKG_Info_Max_Window_Bits",	cpu,
-	    "PKG_Info_Max_Power_Watts", 	cpu,
-	    "PKG_Info_Max_Power_Bits", 	cpu,
-	    "PKG_Info_Min_Power_Watts",	cpu,
-	    "PKG_Info_Min_Power_Bits",	cpu,
-	    "PKG_Info_Thermal_Spec_Watts",	cpu,
-	    "PKG_Info_Thermal_Spec_Bits",	cpu);
+	    "PKG_Info_Max_Window_Sec",	socket,
+	    "PKG_Info_Max_Window_Bits",	socket,
+	    "PKG_Info_Max_Power_Watts", 	socket,
+	    "PKG_Info_Max_Power_Bits", 	socket,
+	    "PKG_Info_Min_Power_Watts",	socket,
+	    "PKG_Info_Min_Power_Bits",	socket,
+	    "PKG_Info_Thermal_Spec_Watts",	socket,
+	    "PKG_Info_Thermal_Spec_Bits",	socket);
 
 
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "DRAM_Info_Max_Window_Sec",	cpu,
-	    "DRAM_Info_Max_Window_Bits",	cpu,
-	    "DRAM_Info_Max_Power_Watts", 	cpu,
-	    "DRAM_Info_Max_Power_Bits", 	cpu,
-	    "DRAM_Info_Min_Power_Watts",	cpu,
-	    "DRAM_Info_Min_Power_Bits",	cpu,
-	    "DRAM_Info_Thermal_Spec_Watts",	cpu,
-	    "DRAM_Info_Thermal_Spec_Bits",	cpu);
+	    "DRAM_Info_Max_Window_Sec",	socket,
+	    "DRAM_Info_Max_Window_Bits",	socket,
+	    "DRAM_Info_Max_Power_Watts", 	socket,
+	    "DRAM_Info_Max_Power_Bits", 	socket,
+	    "DRAM_Info_Min_Power_Watts",	socket,
+	    "DRAM_Info_Min_Power_Bits",	socket,
+	    "DRAM_Info_Thermal_Spec_Watts",	socket,
+	    "DRAM_Info_Thermal_Spec_Bits",	socket);
 
 
 
@@ -618,66 +618,66 @@ static void print_rapl_state_header(struct rapl_state_s *s){
     //
 
     fprintf( s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	     "Units_Power_Bits",		cpu, 
-	     "Units_Energy_Bits",		cpu, 
-	     "Units_Time_Bits",		cpu, 
-	     "Units_Power_Watts",		cpu, 
-	     "Units_Energy_Joules",		cpu, 
-	     "Units_Time_Seconds",		cpu);
+	     "Units_Power_Bits",		socket, 
+	     "Units_Energy_Bits",		socket, 
+	     "Units_Time_Bits",		socket, 
+	     "Units_Power_Watts",		socket, 
+	     "Units_Energy_Joules",		socket, 
+	     "Units_Time_Seconds",		socket);
 
 
     //
     // LIMITS -- PKG Window 2
     //
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "PKG_Limit2_Enable",		cpu,
-	    "PKG_Limit2_Clamp",		cpu,
-	    "PKG_Limit2_Time_Bits",		cpu,
-	    "PKG_Limit2_Power_Bits",	cpu,
-	    "PKG_Limit2_Mult_Bits", 	cpu,
-	    "PKG_Limit2_Mult_Float",	cpu,
-	    "PKG_Limit2_Time_Seconds", 	cpu,
-	    "PKG_Limit2_Power_Watts", 	cpu); 
+	    "PKG_Limit2_Enable",		socket,
+	    "PKG_Limit2_Clamp",		socket,
+	    "PKG_Limit2_Time_Bits",		socket,
+	    "PKG_Limit2_Power_Bits",	socket,
+	    "PKG_Limit2_Mult_Bits", 	socket,
+	    "PKG_Limit2_Mult_Float",	socket,
+	    "PKG_Limit2_Time_Seconds", 	socket,
+	    "PKG_Limit2_Power_Watts", 	socket); 
 			
     //
     // LIMITS -- PKG Window 1
     //
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "PKG_Limit1_Enable",		cpu,
-	    "PKG_Limit1_Clamp",		cpu,
-	    "PKG_Limit1_Time_Bits",		cpu,
-	    "PKG_Limit1_Power_Bits",	cpu,
-	    "PKG_Limit1_Mult_Bits", 	cpu,
-	    "PKG_Limit1_Mult_Float",	cpu,
-	    "PKG_Limit1_Time_Seconds", 	cpu,
-	    "PKG_Limit1_Power_Watts", 	cpu); 
+	    "PKG_Limit1_Enable",		socket,
+	    "PKG_Limit1_Clamp",		socket,
+	    "PKG_Limit1_Time_Bits",		socket,
+	    "PKG_Limit1_Power_Bits",	socket,
+	    "PKG_Limit1_Mult_Bits", 	socket,
+	    "PKG_Limit1_Mult_Float",	socket,
+	    "PKG_Limit1_Time_Seconds", 	socket,
+	    "PKG_Limit1_Power_Watts", 	socket); 
 			
     //
     // LIMITS -- PP0 Window
     //
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "PP0_Limit1_Enable",		cpu,
-	    "PP0_Limit1_Clamp",		cpu,
-	    "PP0_Limit1_Time_Bits",		cpu,
-	    "PP0_Limit1_Power_Bits",	cpu,
-	    "PP0_Limit1_Mult_Bits", 	cpu,
-	    "PP0_Limit1_Mult_Float",	cpu,
-	    "PP0_Limit1_Time_Seconds", 	cpu,
-	    "PP0_Limit1_Power_Watts", 	cpu); 
+	    "PP0_Limit1_Enable",		socket,
+	    "PP0_Limit1_Clamp",		socket,
+	    "PP0_Limit1_Time_Bits",		socket,
+	    "PP0_Limit1_Power_Bits",	socket,
+	    "PP0_Limit1_Mult_Bits", 	socket,
+	    "PP0_Limit1_Mult_Float",	socket,
+	    "PP0_Limit1_Time_Seconds", 	socket,
+	    "PP0_Limit1_Power_Watts", 	socket); 
 
 #ifdef ARCH_062D
     //
     // LIMITS -- DRAM Window
     //
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
-	    "DRAM_Limit1_Enable",		cpu,
-	    "DRAM_Limit1_Clamp",		cpu,
-	    "DRAM_Limit1_Time_Bits",	cpu,
-	    "DRAM_Limit1_Power_Bits",	cpu,
-	    "DRAM_Limit1_Mult_Bits", 	cpu,
-	    "DRAM_Limit1_Mult_Float",	cpu,
-	    "DRAM_Limit1_Time_Seconds", 	cpu,
-	    "DRAM_Limit1_Power_Watts", 	cpu); 
+	    "DRAM_Limit1_Enable",		socket,
+	    "DRAM_Limit1_Clamp",		socket,
+	    "DRAM_Limit1_Time_Bits",	socket,
+	    "DRAM_Limit1_Power_Bits",	socket,
+	    "DRAM_Limit1_Mult_Bits", 	socket,
+	    "DRAM_Limit1_Mult_Float",	socket,
+	    "DRAM_Limit1_Time_Seconds", 	socket,
+	    "DRAM_Limit1_Power_Watts", 	socket); 
 #endif
   }
 			
