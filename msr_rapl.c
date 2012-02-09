@@ -9,7 +9,7 @@
 
 static void print_rapl_state(struct rapl_state_s *s);
 static void print_rapl_state_header(struct rapl_state_s *s);
-
+static void get_all_status(int cpu, struct rapl_state_s *s);
 
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
@@ -440,17 +440,7 @@ rapl_finalize( struct rapl_state_s *s ){
 	gettimeofday( &(s->finish), NULL );
 	s->elapsed = ts_delta( &(s->start), &(s->finish) );
 	for(cpu=0; cpu<NUM_PACKAGES; cpu++){
-
-		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
-		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
-#ifdef ARCH_062D
-		get_energy_status( cpu, DRAM_DOMAIN, &(s->energy_status[cpu][DRAM_DOMAIN]),&(s->power_unit[cpu]) );
-#endif
-		s->avg_watts[cpu][PKG_DOMAIN] = joules2watts( s->energy_status[cpu][PKG_DOMAIN], &(s->start), &(s->finish) );
-		s->avg_watts[cpu][PP0_DOMAIN] = joules2watts( s->energy_status[cpu][PP0_DOMAIN], &(s->start), &(s->finish) );
-#ifdef ARCH_062D
-		s->avg_watts[cpu][DRAM_DOMAIN] = joules2watts( s->energy_status[cpu][DRAM_DOMAIN], &(s->start), &(s->finish) );
-#endif
+		get_all_status(cpu, s);
 
 		// Rest all limits.
 		write_msr( cpu, MSR_PKG_POWER_LIMIT, 0 );
@@ -467,14 +457,22 @@ rapl_finalize( struct rapl_state_s *s ){
 	fclose(s->f);
 }
 
-#endif //ARCH_SANDY_BRIDGE
+static void get_all_status(int cpu, struct rapl_state_s *s){
+		get_energy_status( cpu, PKG_DOMAIN,  &(s->energy_status[cpu][PKG_DOMAIN]), &(s->power_unit[cpu]) );
+		get_energy_status( cpu, PP0_DOMAIN,  &(s->energy_status[cpu][PP0_DOMAIN]), &(s->power_unit[cpu]) );
+#ifdef ARCH_062D
+		get_energy_status( cpu, DRAM_DOMAIN, &(s->energy_status[cpu][DRAM_DOMAIN]),&(s->power_unit[cpu]) );
+#endif
+		s->avg_watts[cpu][PKG_DOMAIN] = joules2watts( s->energy_status[cpu][PKG_DOMAIN], &(s->start), &(s->finish) );
+		s->avg_watts[cpu][PP0_DOMAIN] = joules2watts( s->energy_status[cpu][PP0_DOMAIN], &(s->start), &(s->finish) );
+#ifdef ARCH_062D
+		s->avg_watts[cpu][DRAM_DOMAIN] = joules2watts( s->energy_status[cpu][DRAM_DOMAIN], &(s->start), &(s->finish) );
+#endif
+}
 
 
 static void print_rapl_state(struct rapl_state_s *s){
   
-  assert(s);
-  assert(s->f);
-
   int cpu;
   
   // Now the data on the following line....
@@ -569,9 +567,6 @@ static void print_rapl_state(struct rapl_state_s *s){
 }
 
 static void print_rapl_state_header(struct rapl_state_s *s){
-
-  assert(s);
-  assert(s->f);
 
   int cpu;
   
@@ -691,3 +686,4 @@ static void print_rapl_state_header(struct rapl_state_s *s){
   //
   fprintf(s->f, "\n");
 }
+#endif //ARCH_SANDY_BRIDGE
