@@ -27,6 +27,7 @@ test_power_meters(){
 	struct power_unit units;
 	struct power_info info[NUM_DOMAINS];
 	double joules[NUM_DOMAINS]; 
+	uint64_t last_raw_joules[NUM_DOMAINS];
 	struct timeval now;
 #ifdef ARCH_062D
 	int i;
@@ -36,14 +37,20 @@ test_power_meters(){
 
 #ifdef ARCH_062A
 	get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
-	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
-	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
-	get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units);
+	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+			  &last_raw_joules[PKG_DOMAIN]);
+	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
+			  &last_raw_joules[PP0_DOMAIN]);
+	get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
+			  &last_raw_joules[PP1_DOMAIN]);
 	while(1){
 		gettimeofday(&now, NULL);
-		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
-		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
-		get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units);
+		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
+				  &last_raw_joules[PKG_DOMAIN]);
+		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
+				  &last_raw_joules[PP0_DOMAIN]);
+		get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
+				  &last_raw_joules[PP1_DOMAIN]);
 		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  pp1_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[PP1_DOMAIN] );
