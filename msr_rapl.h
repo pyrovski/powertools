@@ -140,6 +140,9 @@ void get_rapl_power_unit(	int socket, 		struct power_unit *p				         );
 
 void get_all_status(int socket, struct rapl_state_s *s);
 
+// print
+void print_rapl_state(struct rapl_state_s *s);
+
 
 // set
 

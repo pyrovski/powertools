@@ -7,7 +7,6 @@
 #include "msr_opt.h"
 #include "blr_util.h"
 
-static void print_rapl_state(struct rapl_state_s *s);
 static void print_rapl_state_header(struct rapl_state_s *s);
 
 double
@@ -408,6 +407,7 @@ rapl_init(int argc, char **argv, FILE *f){
 	parse_opts( argc, argv );
 	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
 	s.f = f;
+	print_rapl_state_header(&s);
 
 	for(socket=0; socket<NUM_PACKAGES; socket++){
 		get_rapl_power_unit( socket, &(s.power_unit[socket]) );
@@ -451,7 +451,6 @@ rapl_finalize( struct rapl_state_s *s ){
 
 	// Now the print statement from hell.
 	
-	print_rapl_state_header(s);
 	print_rapl_state(s);
 	fclose(s->f);
 }
@@ -470,7 +469,7 @@ void get_all_status(int socket, struct rapl_state_s *s){
 }
 
 
-static void print_rapl_state(struct rapl_state_s *s){
+void print_rapl_state(struct rapl_state_s *s){
   
   int socket;
   
@@ -565,7 +564,7 @@ static void print_rapl_state(struct rapl_state_s *s){
 
 }
 
-static void print_rapl_state_header(struct rapl_state_s *s){
+void print_rapl_state_header(struct rapl_state_s *s){
 
   int socket;
   
