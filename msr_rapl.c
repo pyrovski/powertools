@@ -9,7 +9,6 @@
 
 static void print_rapl_state(struct rapl_state_s *s);
 static void print_rapl_state_header(struct rapl_state_s *s);
-static void get_all_status(int socket, struct rapl_state_s *s);
 
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
@@ -457,7 +456,7 @@ rapl_finalize( struct rapl_state_s *s ){
 	fclose(s->f);
 }
 
-static void get_all_status(int socket, struct rapl_state_s *s){
+void get_all_status(int socket, struct rapl_state_s *s){
 		get_energy_status( socket, PKG_DOMAIN,  &(s->energy_status[socket][PKG_DOMAIN]), &(s->power_unit[socket]) );
 		get_energy_status( socket, PP0_DOMAIN,  &(s->energy_status[socket][PP0_DOMAIN]), &(s->power_unit[socket]) );
 #ifdef ARCH_062D
