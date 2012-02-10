@@ -456,15 +456,27 @@ rapl_finalize( struct rapl_state_s *s ){
 }
 
 void get_all_status(int socket, struct rapl_state_s *s){
-		get_energy_status( socket, PKG_DOMAIN,  &(s->energy_status[socket][PKG_DOMAIN]), &(s->power_unit[socket]) );
-		get_energy_status( socket, PP0_DOMAIN,  &(s->energy_status[socket][PP0_DOMAIN]), &(s->power_unit[socket]) );
+  get_energy_status( socket, PKG_DOMAIN,  
+		     &(s->energy_status[socket][PKG_DOMAIN]), 
+&(s->power_unit[socket]) );
+  get_energy_status( socket, PP0_DOMAIN,  
+		     &(s->energy_status[socket][PP0_DOMAIN]), 
+		     &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_energy_status( socket, DRAM_DOMAIN, &(s->energy_status[socket][DRAM_DOMAIN]),&(s->power_unit[socket]) );
+  get_energy_status( socket, DRAM_DOMAIN, 
+		     &(s->energy_status[socket][DRAM_DOMAIN]), 
+		     &(s->power_unit[socket]) );
 #endif
-		s->avg_watts[socket][PKG_DOMAIN] = joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->start), &(s->finish) );
-		s->avg_watts[socket][PP0_DOMAIN] = joules2watts( s->energy_status[socket][PP0_DOMAIN], &(s->start), &(s->finish) );
+  s->avg_watts[socket][PKG_DOMAIN] = 
+    joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->start), 
+		  &(s->finish) );
+  s->avg_watts[socket][PP0_DOMAIN] = 
+    joules2watts( s->energy_status[socket][PP0_DOMAIN], &(s->start), 
+		  &(s->finish) );
 #ifdef ARCH_062D
-		s->avg_watts[socket][DRAM_DOMAIN] = joules2watts( s->energy_status[socket][DRAM_DOMAIN], &(s->start), &(s->finish) );
+  s->avg_watts[socket][DRAM_DOMAIN] = 
+    joules2watts( s->energy_status[socket][DRAM_DOMAIN], &(s->start), 
+		  &(s->finish) );
 #endif
 }
 
