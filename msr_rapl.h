@@ -117,8 +117,39 @@ struct power_limit{
 	double time_multiplier_float_2;
 };
 
-struct rapl_state_s * 
-rapl_init(int argc, char **argv, FILE *f, int print_header);
+enum{
+	PKG_DOMAIN,
+	PP0_DOMAIN,
+#ifdef ARCH_062A
+	PP1_DOMAIN,
+#endif
+#ifdef ARCH_062D
+	DRAM_DOMAIN,
+#endif
+	NUM_DOMAINS
+};
+
+struct rapl_state_s{
+	FILE *f;
+	struct timeval prev;
+	struct timeval finish;
+	double elapsed;
+	double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
+	double energy_status[NUM_PACKAGES][NUM_DOMAINS];
+	struct power_limit power_limit[NUM_PACKAGES][NUM_DOMAINS];
+	struct power_unit  power_unit[NUM_PACKAGES];
+	struct power_info  power_info[NUM_PACKAGES][NUM_DOMAINS];
+	uint64_t last_raw_joules[NUM_PACKAGES][NUM_DOMAINS];
+	/*
+	double perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
+	double perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
+	uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
+	*/
+};
+
+void
+rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f, 
+	  int print_header);
 
 void 
 rapl_finalize( struct rapl_state_s *s );
@@ -130,7 +161,8 @@ void get_raw_power_info( 	int socket, int domain, 	uint64_t *pval      );
 void get_raw_perf_status( 	int socket, int domain,	uint64_t *pstatus   );		
 void get_raw_policy( 		int socket, int domain, 	uint64_t *priority  );
 
-void get_energy_status(		int socket, int domain, 	double *joules, 		struct power_unit *units);
+void get_energy_status(int socket, int domain, double *joules, 
+		       struct power_unit *units, uint64_t *last_raw_joules);
 void get_power_limit( 		int socket, int domain, 	struct power_limit *limit, 	struct power_unit *units);
 void get_power_info(		int socket, int domain, 	struct power_info *info, 	struct power_unit *units);
 void get_perf_status(		int socket, int domain, 	double *pstatus_sec, 		struct power_unit *units);	
@@ -152,39 +184,7 @@ void set_raw_policy( int socket, int domain, uint64_t policy );
 void set_power_limit( int socket, int domain, struct power_limit *limit );		
 void set_policy( int socket, int domain, uint64_t policy );
 
-enum{
-	PKG_DOMAIN,
-	PP0_DOMAIN,
-#ifdef ARCH_062A
-	PP1_DOMAIN,
-#endif
-#ifdef ARCH_062D
-	DRAM_DOMAIN,
-#endif
-	NUM_DOMAINS
-};
 
-
-struct rapl_state_s{
-	FILE *f;
-	struct timeval prev;
-	struct timeval finish;
-	double elapsed;
-	double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
-	double energy_status[NUM_PACKAGES][NUM_DOMAINS];
-	struct power_limit power_limit[NUM_PACKAGES][NUM_DOMAINS];
-	struct power_unit  power_unit[NUM_PACKAGES];
-	struct power_info  power_info[NUM_PACKAGES][NUM_DOMAINS];
-	/*
-	double perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
-	double perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
-	uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
-	*/
-};
-
-
-
-	
 
 #endif //ARCH_SANDY_BRIDGE
 

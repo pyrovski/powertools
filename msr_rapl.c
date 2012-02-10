@@ -80,16 +80,16 @@ get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
 }
 
 void
-get_energy_status(int socket, int domain, double *joules, struct power_unit *units ){
-	static uint64_t last_joules[NUM_PACKAGES][NUM_DOMAINS]; 
+get_energy_status(int socket, int domain, double *joules, 
+		  struct power_unit *units, uint64_t *last_raw_joules){
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( socket, domain, &current_joules );
 	// FIXME:  This will give a wrong answer if we've wrapped around multiple times.
-	if( current_joules < last_joules[socket][domain]){
+	if( current_joules < *last_raw_joules){
 		current_joules += 0x100000000;
 	}
-	delta_joules = current_joules - last_joules[socket][domain];	
-	last_joules[socket][domain] = current_joules;
+	delta_joules = current_joules - *last_raw_joules;
+	*last_raw_joules = current_joules;
 	if(joules != NULL){
 		*joules = UNIT_SCALE(delta_joules, units->energy);
 		if(msr_debug){
@@ -399,38 +399,41 @@ set_policy( int socket, int domain, uint64_t policy ){
 }
 
 
-struct rapl_state_s * 
-rapl_init(int argc, char **argv, FILE *f, int print_header){
-	static struct rapl_state_s s;
+void
+rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f, 
+	  int print_header){
 	int socket;
 	init_msr();
 	parse_opts( argc, argv );
 	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
-	s.f = f;
+	s->f = f;
 	if(print_header)
-	  print_rapl_state_header(&s);
+	  print_rapl_state_header(s);
 
 	for(socket=0; socket<NUM_PACKAGES; socket++){
-		get_rapl_power_unit( socket, &(s.power_unit[socket]) );
-		get_power_info(    socket, PKG_DOMAIN,  &(s.power_info[socket][PKG_DOMAIN]),          &(s.power_unit[socket]) );
+		get_rapl_power_unit( socket, &(s->power_unit[socket]) );
+		get_power_info(    socket, PKG_DOMAIN,  &(s->power_info[socket][PKG_DOMAIN]),          &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_info(    socket, DRAM_DOMAIN, &(s.power_info[socket][DRAM_DOMAIN]),         &(s.power_unit[socket]) );
+		get_power_info(    socket, DRAM_DOMAIN, &(s->power_info[socket][DRAM_DOMAIN]),         &(s->power_unit[socket]) );
 #endif
 
-		get_power_limit(   socket, PKG_DOMAIN,  &(s.power_limit[socket][PKG_DOMAIN]),         &(s.power_unit[socket]) );
-		get_power_limit(   socket, PP0_DOMAIN,  &(s.power_limit[socket][PP0_DOMAIN]),         &(s.power_unit[socket]) );
+		get_power_limit(   socket, PKG_DOMAIN,  &(s->power_limit[socket][PKG_DOMAIN]),         &(s->power_unit[socket]) );
+		get_power_limit(   socket, PP0_DOMAIN,  &(s->power_limit[socket][PP0_DOMAIN]),         &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_limit(   socket, DRAM_DOMAIN, &(s.power_limit[socket][DRAM_DOMAIN]),        &(s.power_unit[socket]) );
+		get_power_limit(   socket, DRAM_DOMAIN, &(s->power_limit[socket][DRAM_DOMAIN]),        &(s->power_unit[socket]) );
 #endif
 
-		get_energy_status( socket, PKG_DOMAIN,  NULL, &(s.power_unit[socket]) );
-		get_energy_status( socket, PP0_DOMAIN,  NULL, &(s.power_unit[socket]) );
+		get_energy_status( socket, PKG_DOMAIN,  NULL, 
+				   &(s->power_unit[socket]),
+				   &s->last_raw_joules[socket][PKG_DOMAIN]);
+		get_energy_status( socket, PP0_DOMAIN,  NULL, 
+				   &(s->power_unit[socket]) ,
+				   &s->last_raw_joules[socket][PP0_DOMAIN]);
 #ifdef ARCH_062D
-		get_energy_status( socket, DRAM_DOMAIN, NULL, &(s.power_unit[socket]) );
+		get_energy_status( socket, DRAM_DOMAIN, NULL, &(s->power_unit[socket]) );
 #endif
 	}
-	gettimeofday( &(s.prev), NULL );
-	return &s;
+	gettimeofday( &(s->prev), NULL );
 }
 
 void
@@ -459,14 +462,17 @@ rapl_finalize( struct rapl_state_s *s ){
 void get_all_status(int socket, struct rapl_state_s *s){
   get_energy_status( socket, PKG_DOMAIN,  
 		     &(s->energy_status[socket][PKG_DOMAIN]), 
-&(s->power_unit[socket]) );
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][PKG_DOMAIN]);
   get_energy_status( socket, PP0_DOMAIN,  
 		     &(s->energy_status[socket][PP0_DOMAIN]), 
-		     &(s->power_unit[socket]) );
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][PP0_DOMAIN]);
 #ifdef ARCH_062D
   get_energy_status( socket, DRAM_DOMAIN, 
 		     &(s->energy_status[socket][DRAM_DOMAIN]), 
-		     &(s->power_unit[socket]) );
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][DRAM_DOMAIN]);
 #endif
   s->avg_watts[socket][PKG_DOMAIN] = 
     joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->prev), 
