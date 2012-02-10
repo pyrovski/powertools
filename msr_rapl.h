@@ -167,7 +167,7 @@ enum{
 
 struct rapl_state_s{
 	FILE *f;
-	struct timeval start;
+	struct timeval prev;
 	struct timeval finish;
 	double elapsed;
 	double avg_watts[NUM_PACKAGES][NUM_DOMAINS];

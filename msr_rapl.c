@@ -429,7 +429,7 @@ rapl_init(int argc, char **argv, FILE *f, int print_header){
 		get_energy_status( socket, DRAM_DOMAIN, NULL, &(s.power_unit[socket]) );
 #endif
 	}
-	gettimeofday( &(s.start), NULL );
+	gettimeofday( &(s.prev), NULL );
 	return &s;
 }
 
@@ -438,7 +438,7 @@ rapl_finalize( struct rapl_state_s *s ){
 
 	int socket;
 	gettimeofday( &(s->finish), NULL );
-	s->elapsed = ts_delta( &(s->start), &(s->finish) );
+	s->elapsed = ts_delta( &(s->prev), &(s->finish) );
 	for(socket=0; socket<NUM_PACKAGES; socket++){
 		get_all_status(socket, s);
 
@@ -469,14 +469,14 @@ void get_all_status(int socket, struct rapl_state_s *s){
 		     &(s->power_unit[socket]) );
 #endif
   s->avg_watts[socket][PKG_DOMAIN] = 
-    joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->start), 
+    joules2watts( s->energy_status[socket][PKG_DOMAIN], &(s->prev), 
 		  &(s->finish) );
   s->avg_watts[socket][PP0_DOMAIN] = 
-    joules2watts( s->energy_status[socket][PP0_DOMAIN], &(s->start), 
+    joules2watts( s->energy_status[socket][PP0_DOMAIN], &(s->prev), 
 		  &(s->finish) );
 #ifdef ARCH_062D
   s->avg_watts[socket][DRAM_DOMAIN] = 
-    joules2watts( s->energy_status[socket][DRAM_DOMAIN], &(s->start), 
+    joules2watts( s->energy_status[socket][DRAM_DOMAIN], &(s->prev), 
 		  &(s->finish) );
 #endif
 }
