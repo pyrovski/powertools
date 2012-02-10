@@ -117,8 +117,8 @@ struct power_limit{
 	double time_multiplier_float_2;
 };
 
-struct rapl_state_s *
-rapl_init( int argc, char **argv, FILE *f );
+struct rapl_state_s * 
+rapl_init(int argc, char **argv, FILE *f, int print_header);
 
 void 
 rapl_finalize( struct rapl_state_s *s );

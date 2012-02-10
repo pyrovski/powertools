@@ -400,14 +400,15 @@ set_policy( int socket, int domain, uint64_t policy ){
 
 
 struct rapl_state_s * 
-rapl_init(int argc, char **argv, FILE *f){
+rapl_init(int argc, char **argv, FILE *f, int print_header){
 	static struct rapl_state_s s;
 	int socket;
 	init_msr();
 	parse_opts( argc, argv );
 	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
 	s.f = f;
-	print_rapl_state_header(&s);
+	if(print_header)
+	  print_rapl_state_header(&s);
 
 	for(socket=0; socket<NUM_PACKAGES; socket++){
 		get_rapl_power_unit( socket, &(s.power_unit[socket]) );
