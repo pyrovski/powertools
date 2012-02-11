@@ -430,7 +430,9 @@ rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f,
 				   &(s->power_unit[socket]) ,
 				   &s->last_raw_joules[socket][PP0_DOMAIN]);
 #ifdef ARCH_062D
-		get_energy_status( socket, DRAM_DOMAIN, NULL, &(s->power_unit[socket]) );
+		get_energy_status( socket, DRAM_DOMAIN, NULL, 
+				   &(s->power_unit[socket]) ,
+				   &s->last_raw_joules[socket][DRAM_DOMAIN]);
 #endif
 	}
 	gettimeofday( &(s->prev), NULL );
