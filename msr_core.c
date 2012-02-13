@@ -13,6 +13,7 @@
 #include <fcntl.h>	// / ....
 #include <stdint.h>	// uint64_t
 #include <errno.h>
+#include <asm/msr.h>
 #include "msr_core.h"
 #include "msr_common.h"
 
@@ -110,4 +111,37 @@ write_and_validate_msr( int cpu, off_t msr, uint64_t val ){
 	}
 }
 
-
+void read_aperf_mperf(int cpu, uint64_t *aperf, uint64_t *mperf){
+  int rc1, rc2;
+#ifdef _DEBUG
+  char error_msg[1025];
+#endif
+  rc1 = pread( fd[cpu], (void*)aperf, sizeof(uint64_t), MSR_IA32_APERF );
+  rc2 = pread( fd[cpu], (void*)mperf, sizeof(uint64_t), MSR_IA32_MPERF );
+  if( rc1 != sizeof(uint64_t) || rc2 != sizeof(uint64_t)){
+#ifdef _DEBUG
+    if(rc1 != sizeof(uint64_t)){
+      snprintf( error_msg, 1024, 
+		"%s::%d  pread returned %d.  cpu=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
+		__FILE__, __LINE__, rc1, cpu, MSR_IA32_APERF, MSR_IA32_APERF, 
+		*aperf, *aperf );
+      perror(error_msg);
+    }
+    if(rc2 != sizeof(uint64_t)){
+      snprintf( error_msg, 1024, 
+		"%s::%d  pread returned %d.  cpu=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
+		__FILE__, __LINE__, rc2, cpu, MSR_IA32_MPERF, MSR_IA32_MPERF, 
+		*mperf, *mperf );
+      perror(error_msg);
+    }
+#else
+    perror("failed pread");
+#endif
+  }
+  if( msr_debug ){
+    fprintf(stderr, "%s::%d read msr=0x%lx val=0x%lx\n",
+	    __FILE__, __LINE__, *aperf, *aperf);
+    fprintf(stderr, "%s::%d read msr=0x%lx val=0x%lx\n",
+	    __FILE__, __LINE__, *mperf, *mperf);
+  }
+}
