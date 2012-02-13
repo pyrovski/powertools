@@ -3,7 +3,7 @@
 #include "msr_core.h"
 #include "cpuid.h"
 
-#define _DEBUG
+//#define _DEBUG
 
 /*!
   enable/disable turbo for all cores
