@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "msr_turbo.h"
 #include "msr_core.h"
 #include "cpuid.h"
+#include "msr_freq.h"
 
 //#define _DEBUG
 
@@ -32,5 +34,13 @@ int main(int argc, char ** argv){
       disable_turbo(config.map_socket_to_core[i][0]);
     }
   }
+
+  uint64_t aperf, mperf;
+  for(i = 0; i < config.cores; i++){
+    aperf = 0;
+    mperf = 0;
+    read_aperf_mperf(i, &aperf, &mperf);
+  }
+
   return 0;
 }
