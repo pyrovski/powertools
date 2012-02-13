@@ -13,7 +13,7 @@ endif
 CFLAGS=-fPIC -Wall ${DEFINES}
 CC=gcc
 
-all: $(target) $(library)
+all: $(target) $(library) turbo
 
 msr_common.o: msr_rapl.h msr_common.c msr_common.h Makefile
 msr_core.o: msr_core.c msr_core.h Makefile
@@ -33,8 +33,11 @@ install: $(library)
 $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o
 	gcc -shared -Wl,-soname,$(library) -o $(library) $^
 
+turbo: turbo.c cpuid.c msr_turbo.c msr_core.c
+	$(CC) $(CFLAGS) -o $@ $^
+
 clean:
-	rm -f *.o $(target) $(library)
+	rm -f *.o $(target) $(library) turbo
 
 zin:
 	srun -n 1 -p asde ./msr
