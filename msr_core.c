@@ -111,30 +111,26 @@ write_and_validate_msr( int cpu, off_t msr, uint64_t val ){
 	}
 }
 
-/*!
-  this seems to only work on the first core of each socket;
-  otherwise, we get seek errors in pread().
- */
-void read_aperf_mperf(int cpu, uint64_t *aperf, uint64_t *mperf){
+void read_aperf_mperf(int socket, uint64_t *aperf, uint64_t *mperf){
   int rc1, rc2;
 #ifdef _DEBUG
   char error_msg[1025];
 #endif
-  rc1 = pread( fd[cpu], (void*)aperf, sizeof(uint64_t), (off_t)MSR_IA32_APERF );
-  rc2 = pread( fd[cpu], (void*)mperf, sizeof(uint64_t), (off_t)MSR_IA32_MPERF );
+  rc1 = pread( fd[socket], (void*)aperf, sizeof(uint64_t), (off_t)MSR_IA32_APERF );
+  rc2 = pread( fd[socket], (void*)mperf, sizeof(uint64_t), (off_t)MSR_IA32_MPERF );
   if( rc1 != sizeof(uint64_t) || rc2 != sizeof(uint64_t)){
 #ifdef _DEBUG
     if(rc1 != sizeof(uint64_t)){
       snprintf( error_msg, 1024, 
-		"%s::%d  pread returned %d.  cpu=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
-		__FILE__, __LINE__, rc1, cpu, MSR_IA32_APERF, MSR_IA32_APERF, 
+		"%s::%d  pread returned %d.  socket=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
+		__FILE__, __LINE__, rc1, socket, MSR_IA32_APERF, MSR_IA32_APERF, 
 		*aperf, *aperf );
       perror(error_msg);
     }
     if(rc2 != sizeof(uint64_t)){
       snprintf( error_msg, 1024, 
-		"%s::%d  pread returned %d.  cpu=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
-		__FILE__, __LINE__, rc2, cpu, MSR_IA32_MPERF, MSR_IA32_MPERF, 
+		"%s::%d  pread returned %d.  socket=%d, msr=%d (0x%x), val=%ld (0x%lx).\n",
+		__FILE__, __LINE__, rc2, socket, MSR_IA32_MPERF, MSR_IA32_MPERF, 
 		*mperf, *mperf );
       perror(error_msg);
     }
