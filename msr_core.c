@@ -13,7 +13,6 @@
 #include <fcntl.h>	// / ....
 #include <stdint.h>	// uint64_t
 #include <errno.h>
-#include <asm/msr.h>
 #include "msr_core.h"
 #include "msr_common.h"
 
@@ -110,6 +109,9 @@ write_and_validate_msr( int cpu, off_t msr, uint64_t val ){
 				__FILE__, __LINE__, cpu, msr, msr, val, val2 );
 	}
 }
+
+#define MSR_IA32_MPERF 0x000000e7
+#define MSR_IA32_APERF 0x000000e8
 
 void read_aperf_mperf(int socket, uint64_t *aperf, uint64_t *mperf){
   int rc1, rc2;
