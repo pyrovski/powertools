@@ -35,12 +35,5 @@ int main(int argc, char ** argv){
     }
   }
 
-  uint64_t aperf, mperf;
-  for(i = 0; i < config.cores; i++){
-    aperf = 0;
-    mperf = 0;
-    read_aperf_mperf(i, &aperf, &mperf);
-  }
-
   return 0;
 }
