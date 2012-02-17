@@ -32,7 +32,7 @@ install: $(library) msr_rapl.h msr_core.h blr_util.h msr_freq.h turbo
 	install -m 0644 -t $(HOME)/local/include msr_rapl.h msr_core.h\
  blr_util.h msr_freq.h
 	install -m 0644 -t $(HOME)/local/lib $(library)
-	install -m 0744 -t $(HOME)/local/bin/ turbo
+	install -m 0744 -t $(HOME)/local/bin/ turbo rapl_clamp
 
 $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o
 	gcc -shared -Wl,-soname,$(library) -o $(library) $^
