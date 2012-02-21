@@ -599,10 +599,12 @@ void print_rapl_state_header(struct rapl_state_s *s){
     //
     // Avg Watts
     //
-    fprintf(s->f, "%s_%d %s_%d %s_%d ",
+    fprintf(s->f, "%s_%d %s_%d ",
 	    "PKG_Watts",		socket,
-	    "PP0_Watts", 		socket,
-	    "DRAM_Watts",		socket);
+	    "PP0_Watts", 		socket);
+#ifdef ARCH_062D
+    fprintf(s->f, "%s_%d ", "DRAM_Watts", socket);
+#endif
 				
     //
     // INFO
