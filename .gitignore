@@ -1,4 +1,6 @@
 *.o
 msr
 .*.swp
+lib/
+
 
