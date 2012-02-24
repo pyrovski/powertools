@@ -208,7 +208,7 @@ set_power_limit( int cpu, int domain, struct power_limit *limit ){
 		assert(0);
 	}
 
-	set_raw_power_limit( 0, domain, val );
+	set_raw_power_limit( cpu, domain, val );
 }
 
 
