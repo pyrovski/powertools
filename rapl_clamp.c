@@ -1,22 +1,61 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "msr_rapl.h"
 #include "msr_core.h"
 #include "cpuid.h"
 
 //#define _DEBUG
 
+
 /*!
   enable/disable turbo for all cores
  */
+
+
+
+
+
+
+
+
+void usage(const char * const argv0){
+  fprintf(stderr, 
+	  "Usage: %s [-e for enable] [-d for disable] [-P <package watts>] [-0 PP0 watts]\n", 
+	  argv0);
+}
+
 int main(int argc, char ** argv){
   init_msr();
   parse_proc_cpuinfo();
 
-  int enable = 1;
-  if(argc > 1)
-    enable = 0;
+  int enable = 0;
 
+  /*
+    get desired performance levels
+   */
+  int opt;
+  float PKG_Watts = 0, PP0_Watts = 0;
+  while((opt = getopt(argc, argv, "ed0:P:")) != -1){
+    switch(opt){
+    case 'e':
+      break;
+    case 'd':
+      enable = 0;
+      break;
+    case '0':
+      // limit power for PP0
+      PP0_Watts = strtof(optarg, 0);
+      break;
+    case 'P':
+      PKG_Watts = strtof(optarg, 0);
+      break;
+    default:
+      usage(argv[0]);
+    }
+  }
+  
   int i;
   for (i = 0; i < config.sockets; i++){
     if(!enable){
@@ -30,6 +69,10 @@ int main(int argc, char ** argv){
       write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
       
+    }else{
+      // 
+      struct power_limit_s power_limit;
+      set_power_limit(i, PKG_DOMAIN, &power_limit);
     }
   }
   

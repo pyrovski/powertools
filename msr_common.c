@@ -24,15 +24,15 @@ spin(uint64_t i){
 
 static void
 test_power_meters(){
-	struct power_unit units;
-	struct power_info info[NUM_DOMAINS];
+	struct power_unit_s units;
+	struct power_info_s info[NUM_DOMAINS];
 	double joules[NUM_DOMAINS]; 
 	uint64_t last_raw_joules[NUM_DOMAINS];
 	struct timeval now;
 #ifdef ARCH_062D
 	int i;
 #endif
-	msr_debug=0;
+	msr_debug=1;
 	get_rapl_power_unit(0, &units);
 
 #ifdef ARCH_062A

@@ -4,7 +4,7 @@
 target=msr
 library=libmsr.so
 
-DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062D -DPKG_PERF_STATUS_AVAILABLE
+DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062A -DPKG_PERF_STATUS_AVAILABLE
 
 ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
@@ -40,11 +40,8 @@ $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o
 turbo: turbo.c cpuid.c msr_turbo.c msr_core.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-rapl_clamp: rapl_clamp.c msr_core.c cpuid.c
+rapl_clamp: rapl_clamp.c msr_core.c cpuid.c msr_rapl.c msr_opt.c blr_util.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
 	rm -f *.o $(target) $(library) turbo rapl_clamp
-
-zin:
-	srun -n 1 -p asde ./msr

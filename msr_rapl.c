@@ -22,7 +22,7 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
 #ifdef ARCH_SANDY_BRIDGE
 void
-get_rapl_power_unit(int socket, struct power_unit *units){
+get_rapl_power_unit(int socket, struct power_unit_s *units){
 	uint64_t val;
 	read_msr( socket, MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
@@ -81,7 +81,7 @@ get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
 
 void
 get_energy_status(int socket, int domain, double *joules, 
-		  struct power_unit *units, uint64_t *last_raw_joules){
+		  struct power_unit_s *units, uint64_t *last_raw_joules){
 	uint64_t current_joules, delta_joules;
 	get_raw_energy_status( socket, domain, &current_joules );
 	// FIXME:  This will give a wrong answer if we've wrapped around multiple times.
@@ -114,7 +114,7 @@ get_raw_power_info( int socket, int domain, uint64_t *pval ){
 }
 
 void
-get_power_info( int socket, int domain, struct power_info *info, struct power_unit *units ){
+get_power_info( int socket, int domain, struct power_info_s *info, struct power_unit_s *units ){
 	uint64_t val;
 	get_raw_power_info( socket, domain, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
@@ -190,7 +190,7 @@ set_raw_power_limit( int socket, int domain, uint64_t val ){
 }
 
 void
-set_power_limit( int socket, int domain, struct power_limit *limit ){
+set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 	uint64_t val = 0;
 	if( domain == PKG_DOMAIN ){
 		val |= (0x0001 & limit->lock) 		<< 63
@@ -222,7 +222,7 @@ set_power_limit( int socket, int domain, struct power_limit *limit ){
 
 
 void
-get_power_limit( int socket, int domain, struct power_limit *limit, struct power_unit *units ){
+get_power_limit( int socket, int domain, struct power_limit_s *limit, struct power_unit_s *units ){
 	uint64_t val;
 	get_raw_power_limit( socket, domain, &val );
 
@@ -345,7 +345,7 @@ get_raw_perf_status( int socket, int domain, uint64_t *pstatus ){
 }
 
 void
-get_perf_status( int socket, int domain, double *pstatus, struct power_unit *units ){
+get_perf_status( int socket, int domain, double *pstatus, struct power_unit_s *units ){
 	uint64_t status;
 	get_raw_perf_status( socket, domain, &status );
 	status = MASK_VAL(status, 31, 0);
