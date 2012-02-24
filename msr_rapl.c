@@ -189,6 +189,8 @@ set_raw_power_limit( int socket, int domain, uint64_t val ){
 	}
 }
 
+/*! @todo we need a more human-friendly interface for this
+ */
 void
 set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 	uint64_t val = 0;

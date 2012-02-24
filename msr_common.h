@@ -11,6 +11,7 @@ extern int msr_debug;
 #define MASK_VAL(x,m,n) ((uint64_t)x&MASK_RANGE(m,n))>>n
 
 #define UNIT_SCALE(x,y) (x/(double)(1<<y))
+#define UNIT_DESCALE(x,y) (x*(double)(1<<y))
 
 #endif  // MSR_COMMON_H
 

@@ -5,6 +5,7 @@
 #include "msr_rapl.h"
 #include "msr_core.h"
 #include "cpuid.h"
+#include "msr_common.h"
 
 //#define _DEBUG
 
@@ -80,7 +81,15 @@ int main(int argc, char ** argv){
     }else{
       // 
       struct power_limit_s power_limit = {
-	.lock = 0
+	.lock = 0,
+	.time_window_1 = 0,
+	.clamp_1 = 1,
+	.enable_1 = 1,
+	.power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	.time_multiplier_1 = 0, // as short as possible
+	.time_window_1 = 0, // as short as possible
+	.enable_2 = 0,
+	.clamp_2 = 0
       };
       set_power_limit(i, PKG_DOMAIN, &power_limit);
     }
