@@ -4,7 +4,10 @@
 target=msr
 library=libmsr.so
 
-DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062A -DPKG_PERF_STATUS_AVAILABLE
+DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DPKG_PERF_STATUS_AVAILABLE
+
+# put your local -DARCH_062A or -DARCH_062D in here
+-include localConfig
 
 ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
