@@ -152,7 +152,7 @@ rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f,
 	  int print_header);
 
 void 
-rapl_finalize( struct rapl_state_s *s );
+rapl_finalize( struct rapl_state_s *s, int reset_limits);
 
 // get
 void get_raw_energy_status(	int socket, int domain, uint64_t *raw_joules);

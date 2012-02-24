@@ -439,7 +439,7 @@ rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f,
 }
 
 void
-rapl_finalize( struct rapl_state_s *s ){
+rapl_finalize( struct rapl_state_s *s, int reset_limits){
 
 	int socket;
 	gettimeofday( &(s->finish), NULL );
@@ -447,14 +447,16 @@ rapl_finalize( struct rapl_state_s *s ){
 	for(socket=0; socket<NUM_PACKAGES; socket++){
 		get_all_status(socket, s);
 
-		// Rest all limits.
-		write_msr( socket, MSR_PKG_POWER_LIMIT, 0 );
-		write_msr( socket, MSR_PP0_POWER_LIMIT, 0 );
+		if(reset_limits){
+		  // Rest all limits.
+		  write_msr( socket, MSR_PKG_POWER_LIMIT, 0 );
+		  write_msr( socket, MSR_PP0_POWER_LIMIT, 0 );
 #ifdef ARCH_062D
-		write_msr( socket, MSR_DRAM_POWER_LIMIT, 0 );
+		  write_msr( socket, MSR_DRAM_POWER_LIMIT, 0 );
 #endif
+		}
 	}
-
+	
 	// Now the print statement from hell.
 	
 	print_rapl_state(s);

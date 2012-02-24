@@ -33,7 +33,7 @@ static int msr_rank_mod=1;
 {{fn foo MPI_Finalize}}
 	double elapsed;
 	if(rank%msr_rank_mod == 0){
-		rapl_finalize(&s);
+		rapl_finalize(&s, 1);
 	}
 	{{callfn}}
 {{endfn}}
