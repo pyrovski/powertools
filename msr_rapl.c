@@ -7,7 +7,7 @@
 #include "msr_opt.h"
 #include "blr_util.h"
 
-static void prnt_rapl_state_header(struct rapl_state_s *s);
+static void print_rapl_state_header(struct rapl_state_s *s);
 
 double
 joules2watts( double joules, struct timeval *start, struct timeval *stop ){
