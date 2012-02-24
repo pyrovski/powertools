@@ -58,8 +58,8 @@ void
 write_msr(int cpu, off_t msr, uint64_t val){
 	int rc;
 	char error_msg[1025];
-	rc = pwrite( fd[cpu], &val, (size_t)8, msr );
-	if( rc != 8 ){
+	rc = pwrite( fd[cpu], &val, (size_t)sizeof(uint64_t), msr );
+	if( rc != sizeof(uint64_t) ){
 		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  fd[%d]=%d, cpu=%d, msr=%ld (%lx), val=%ld (0x%lx).  errno=%d\n", 
 				__FILE__, __LINE__, rc, cpu, fd[cpu], cpu, msr, msr, val, val, errno );
 		perror(error_msg);
@@ -70,8 +70,8 @@ void
 read_msr(int cpu, off_t msr, uint64_t *val){
 	int rc;
 	char error_msg[1025];
-	rc = pread( fd[cpu], (void*)val, (size_t)8, msr );
-	if( rc != 8 ){
+	rc = pread( fd[cpu], (void*)val, (size_t)sizeof(uint64_t), msr );
+	if( rc != sizeof(uint64_t) ){
 		snprintf( error_msg, 1024, "%s::%d  pread returned %d.  cpu=%d, msr=%ld (0x%lx), val=%ld (0x%lx).\n", 
 				__FILE__, __LINE__, rc, cpu, msr, msr, *val, *val );
 		perror(error_msg);
