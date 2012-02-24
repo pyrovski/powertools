@@ -196,12 +196,14 @@ set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 	uint64_t val = 0;
 	if( domain == PKG_DOMAIN){
 	  /* no locking for now
-	  val |= (0x0001 & limit->lock) 		<< 63
+	     val |= (0x0001 & limit->lock) 		<< 63
 	  */
-	  val |= (0x007F & limit->time_window_2) << 49
-  	    |    (0x7FFF & limit->power_limit_2) << 32
-	    |    (0x0001 & limit->clamp_2)       << 48
-	    |    (0x0001 & limit->enable_2)      << 47;
+	  // docs say time_window_2 may be ignored
+	  val |= (0x001F & limit->time_window_2)     << 49 
+	    |    (0x0003 & limit->time_multiplier_2) << 54
+	    |    (0x7FFF & limit->power_limit_2)     << 32
+	    |    (0x0001 & limit->clamp_2)           << 48
+	    |    (0x0001 & limit->enable_2)          << 47;
 	}
 	else if(domain == PP0_DOMAIN 
 #ifdef ARCH_062D
@@ -209,7 +211,7 @@ set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 #endif
 		){
 	  /* no locking for now
-	  val |= limit->lock		<< 31;
+	     val |= limit->lock		<< 31;
 	  */
 	}
 	if( domain == PKG_DOMAIN || domain == PP0_DOMAIN
@@ -217,14 +219,15 @@ set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 	    || domain == DRAM_DOMAIN
 #endif
 	    ){
-		val |= (0x007F & limit->time_window_1)	<< 17
-		    |  (0x7FFF & limit->power_limit_1)	<<  0
-		    |  (0x0001 & limit->clamp_1)	<< 16
-		    |  (0x0001 & limit->enable_1)	<< 15;
+	  val |= (0x001F & limit->time_window_1)     << 17
+	    |    (0x0003 & limit->time_multiplier_1) << 22 
+	    |    (0x7FFF & limit->power_limit_1)     <<  0
+	    |    (0x0001 & limit->clamp_1)           << 16
+	    |    (0x0001 & limit->enable_1)          << 15;
 	}else{
-		assert(0);
+	  assert(0);
 	}
-
+	
 	set_raw_power_limit( socket, domain, val );
 }
 
