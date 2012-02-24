@@ -27,10 +27,12 @@ void usage(const char * const argv0){
 }
 
 int main(int argc, char ** argv){
-  init_msr();
+  struct rapl_state_s rapl_state;
+  FILE *f = fopen("/tmp/rapl_clamp", "w");
+  rapl_init(&rapl_state, argc, argv, f, 1);
   parse_proc_cpuinfo();
 
-  int enable = 0;
+  int enable = 1;
 
   /*
     get desired performance levels
@@ -55,6 +57,12 @@ int main(int argc, char ** argv){
       usage(argv[0]);
     }
   }
+  if((PP0_Watts != 0 && enable == 0) || 
+     (PKG_Watts != 0 && enable == 0)){
+    fprintf(stderr, 
+	    "cannot simultaneously apply power bound and disable rapl\n");
+    exit(1);
+  }
   
   int i;
   for (i = 0; i < config.sockets; i++){
@@ -71,11 +79,13 @@ int main(int argc, char ** argv){
       
     }else{
       // 
-      struct power_limit_s power_limit;
+      struct power_limit_s power_limit = {
+	.lock = 0
+      };
       set_power_limit(i, PKG_DOMAIN, &power_limit);
     }
   }
   
-  finalize_msr();
+  rapl_finalize(&rapl_state, 0);
   return 0;
 }
