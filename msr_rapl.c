@@ -406,8 +406,8 @@ rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f,
 	  int print_header){
 	int socket;
 	init_msr();
-	parse_opts( argc, argv );
-	fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
+	//parse_opts( argc, argv );
+	//fprintf(stderr, "%s::%d returned from parse_opts\n", __FILE__, __LINE__);
 	s->f = f;
 	if(print_header)
 	  print_rapl_state_header(s);
