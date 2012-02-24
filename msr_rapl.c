@@ -194,19 +194,25 @@ set_raw_power_limit( int socket, int domain, uint64_t val ){
 void
 set_power_limit( int socket, int domain, struct power_limit_s *limit ){
 	uint64_t val = 0;
-	if( domain == PKG_DOMAIN ){
-		val |= (0x0001 & limit->lock) 		<< 63
-		    |  (0x007F & limit->time_window_2) 	<< 49
-		    |  (0x7FFF & limit->power_limit_2)	<< 32
-		    |  (0x0001 & limit->clamp_2)	<< 48
-		    |  (0x0001 & limit->enable_2)	<< 47;
+	if( domain == PKG_DOMAIN){
+	  /* no locking for now
+	  val |= (0x0001 & limit->lock) 		<< 63
+	  */
+	  val |= (0x007F & limit->time_window_2) << 49
+  	    |    (0x7FFF & limit->power_limit_2) << 32
+	    |    (0x0001 & limit->clamp_2)       << 48
+	    |    (0x0001 & limit->enable_2)      << 47;
 	}
+	else if(domain == PP0_DOMAIN 
 #ifdef ARCH_062D
-	else if(domain == DRAM_DOMAIN){
-		val |= limit->lock		<< 32;
-	}
+		|| domain == DRAM_DOMAIN
 #endif
-	if( domain == PKG_DOMAIN
+		){
+	  /* no locking for now
+	  val |= limit->lock		<< 31;
+	  */
+	}
+	if( domain == PKG_DOMAIN || domain == PP0_DOMAIN
 #ifdef ARCH_062D
 	    || domain == DRAM_DOMAIN
 #endif
@@ -597,7 +603,7 @@ void print_rapl_state_header(struct rapl_state_s *s){
   // Time 
   //
   fprintf(s->f, "%s ",
-	  "# elapsed");
+	  "elapsed");
   for(socket=0; socket<NUM_PACKAGES; socket++){
 
     //
@@ -625,6 +631,7 @@ void print_rapl_state_header(struct rapl_state_s *s){
 	    "PKG_Info_Thermal_Spec_Bits",	socket);
 
 
+#ifdef ARCH_062D
     fprintf(s->f, "%s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d %s_%d ",
 	    "DRAM_Info_Max_Window_Sec",	socket,
 	    "DRAM_Info_Max_Window_Bits",	socket,
@@ -634,7 +641,7 @@ void print_rapl_state_header(struct rapl_state_s *s){
 	    "DRAM_Info_Min_Power_Bits",	socket,
 	    "DRAM_Info_Thermal_Spec_Watts",	socket,
 	    "DRAM_Info_Thermal_Spec_Bits",	socket);
-
+#endif
 
 
 		

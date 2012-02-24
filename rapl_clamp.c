@@ -65,6 +65,8 @@ int main(int argc, char ** argv){
     exit(1);
   }
   
+
+  // for now, apply the same limit to all sockets
   int i;
   for (i = 0; i < config.sockets; i++){
     if(!enable){
@@ -77,24 +79,44 @@ int main(int argc, char ** argv){
 #ifdef ARCH_062D
       write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
-      
     }else{
+      if(!PKG_Watts && !PP0_Watts){
+	fprintf(stderr, "no limits supplied\n");
+	exit(1);
+      }
       // 
-      struct power_limit_s power_limit = {
-	.lock = 0,
-	.time_window_1 = 0,
-	.clamp_1 = 1,
-	.enable_1 = 1,
-	.power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
-	.time_multiplier_1 = 0, // as short as possible
-	.time_window_1 = 0, // as short as possible
-	.enable_2 = 0,
-	.clamp_2 = 0
-      };
-      set_power_limit(i, PKG_DOMAIN, &power_limit);
+      if(PKG_Watts){
+	struct power_limit_s power_limit = {
+	  .lock = 0,
+	  .time_window_1 = 0,
+	  .clamp_1 = 1,
+	  .enable_1 = 1,
+	  .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	  .time_multiplier_1 = 0, // as short as possible
+	  .time_window_1 = 0, // as short as possible
+	  .enable_2 = 0,
+	  .clamp_2 = 0
+	};
+	set_power_limit(i, PKG_DOMAIN, &power_limit);
+      }
+      if(PP0_Watts){
+	struct power_limit_s power_limit = {
+	  .lock = 0,
+	  .time_window_1 = 0, // as short as possible
+	  .clamp_1 = 1, // enable clamp
+	  .enable_1 = 1, // enable limit
+	  .power_limit_1 = UNIT_DESCALE(PP0_Watts, rapl_state.power_unit[i].power),
+	  .time_multiplier_1 = 0, // as short as possible
+	  .time_window_1 = 0, // as short as possible
+	  .enable_2 = 0, // don't use 2nd window
+	  .clamp_2 = 0
+	};
+	set_power_limit(i, PP0_DOMAIN, &power_limit);
+      }
     }
   }
-  
+
+  // don't reset MSRs on exit
   rapl_finalize(&rapl_state, 0);
   return 0;
 }
