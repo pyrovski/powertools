@@ -155,11 +155,12 @@ void
 rapl_finalize( struct rapl_state_s *s );
 
 // get
-void get_raw_energy_status(	int socket, int domain, 	uint64_t *raw_joules);
+void get_raw_energy_status(	int socket, int domain, uint64_t *raw_joules);
 void get_raw_pkg_power_limit( 	int socket, 		uint64_t *pval      );		
-void get_raw_power_info( 	int socket, int domain, 	uint64_t *pval      );
+void get_raw_power_info( 	int socket, int domain, uint64_t *pval      );
 void get_raw_perf_status( 	int socket, int domain,	uint64_t *pstatus   );		
-void get_raw_policy( 		int socket, int domain, 	uint64_t *priority  );
+void get_raw_policy( 		int socket, int domain, uint64_t *priority  );
+void get_raw_power_limit(       int socket, int domain, uint64_t *pval      );
 
 void get_energy_status(int socket, int domain, double *joules, 
 		       struct power_unit *units, uint64_t *last_raw_joules);

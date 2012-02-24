@@ -10,7 +10,7 @@ ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
 endif
 
-CFLAGS=-fPIC -Wall ${DEFINES}
+CFLAGS=-fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS}
 CC=gcc
 
 all: $(target) $(library) turbo rapl_clamp

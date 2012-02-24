@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "msr_rapl.h"
 #include "msr_core.h"
+#include "msr_opt.h"
 
 static struct option long_options[] = {
 	{"MSR_PKG_POWER_LIMIT",		1, 0, MSR_PKG_POWER_LIMIT}, 	// RW
@@ -24,7 +25,6 @@ msr2str( uint64_t msr ){
 #endif
 		default:			return "WTF?";			break;
 	}
-	return "Probably should never be seeing this.";
 }
 
 void
