@@ -96,8 +96,12 @@ int main(int argc, char ** argv){
 	  .clamp_1 = 1,
 	  .enable_1 = 1,
 	  .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	  .time_multiplier_1 = 0, // as short as possible
+	  .time_window_1 = 0, // as short as possible
+	  /*
 	  .time_multiplier_1 = 0b11, // as long as possible
 	  .time_window_1 = 0b11111, // as long as possible
+	  */
 	  .enable_2 = 0,
 	  .clamp_2 = 0
 	};
@@ -111,8 +115,12 @@ int main(int argc, char ** argv){
 	  .clamp_1 = 1, // enable clamp
 	  .enable_1 = 1, // enable limit
 	  .power_limit_1 = UNIT_DESCALE(PP0_Watts, rapl_state.power_unit[i].power),
+	  .time_multiplier_1 = 0, // as short as possible
+	  .time_window_1 = 0, // as short as possible
+	  /*
 	  .time_multiplier_1 = 0b11, // as long as possible
 	  .time_window_1 = 0b11111, // as long as possible
+	  */
 	  .enable_2 = 0, // don't use 2nd window
 	  .clamp_2 = 0
 	};
