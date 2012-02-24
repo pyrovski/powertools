@@ -185,7 +185,6 @@ void set_power_limit( int socket, int domain, struct power_limit *limit );
 void set_policy( int socket, int domain, uint64_t policy );
 
 
-
 #endif //ARCH_SANDY_BRIDGE
 
 

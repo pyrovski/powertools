@@ -1,20 +1,4 @@
-harness
-
-end2end.c
-harness.end2end
-
-end2endall.c
-harness.end2endall
-
-query.c
-harness.query
-
-clamp.c
-harness.clamp
-
 rapl.c
-rapl.out
-harness.rapl
-
-zin*
+rapl.o
+.*.swp
 

@@ -1,5 +1,5 @@
 *.o
 msr
 .*.swp
-
 TAGS
+lib/
