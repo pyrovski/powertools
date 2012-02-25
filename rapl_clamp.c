@@ -23,7 +23,7 @@
 
 void usage(const char * const argv0){
   fprintf(stderr, 
-	  "Usage: %s [-e for enable] [-d for disable] [-P <package watts>] [-0 PP0 watts]\n", 
+	  "Usage: %s [-e for enable] [-d for disable] [-P <package watts>] [-0 PP0 watts] [-2 for 2nd PKG timing window]\n", 
 	  argv0);
 }
 
@@ -34,13 +34,14 @@ int main(int argc, char ** argv){
   parse_proc_cpuinfo();
 
   int enable = 1;
+  int PKG_Window = 1;
 
   /*
     get desired performance levels
    */
   int opt;
   float PKG_Watts = 0, PP0_Watts = 0;
-  while((opt = getopt(argc, argv, "ed0:P:")) != -1){
+  while((opt = getopt(argc, argv, "ed20:P:")) != -1){
     switch(opt){
     case 'e':
       break;
@@ -53,6 +54,9 @@ int main(int argc, char ** argv){
       break;
     case 'P':
       PKG_Watts = strtof(optarg, 0);
+      break;
+    case '2':
+      PKG_Window = 2;
       break;
     default:
       usage(argv[0]);
@@ -91,21 +95,39 @@ int main(int argc, char ** argv){
 	     PKG_Watts, PP0_Watts);
 #endif
       if(PKG_Watts){
-	struct power_limit_s power_limit = {
-	  .lock = 0,
-	  .clamp_1 = 1,
-	  .enable_1 = 1,
-	  .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
-	  .time_multiplier_1 = 0, // as short as possible
-	  .time_window_1 = 0, // as short as possible
-	  /*
-	  .time_multiplier_1 = 0b11, // as long as possible
-	  .time_window_1 = 0b11111, // as long as possible
-	  */
-	  .enable_2 = 0,
-	  .clamp_2 = 0
-	};
-	set_power_limit(i, PKG_DOMAIN, &power_limit);
+	if(PKG_Window == 1){
+	  struct power_limit_s power_limit = {
+	    .lock = 0,
+	    .clamp_1 = 1,
+	    .enable_1 = 1,
+	    .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	    .time_multiplier_1 = 0, // as short as possible
+	    .time_window_1 = 0, // as short as possible
+	    /*
+	      .time_multiplier_1 = 0b11, // as long as possible
+	      .time_window_1 = 0b11111, // as long as possible
+	    */
+	    .enable_2 = 0,
+	    .clamp_2 = 0
+	  };
+	  set_power_limit(i, PKG_DOMAIN, &power_limit);
+	} else {
+	  struct power_limit_s power_limit = {
+	    .lock = 0,
+	    .clamp_2 = 1,
+	    .enable_2 = 1,
+	    .power_limit_2 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	    .time_multiplier_2 = 0, // as short as possible
+	    .time_window_2 = 0, // as short as possible
+	    /*
+	      .time_multiplier_1 = 0b11, // as long as possible
+	      .time_window_1 = 0b11111, // as long as possible
+	    */
+	    .enable_1 = 0,
+	    .clamp_1 = 0
+	  };
+	  set_power_limit(i, PKG_DOMAIN, &power_limit);
+	}
       } else {
 	write_msr( config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
       }
