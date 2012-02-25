@@ -69,7 +69,6 @@ int main(int argc, char ** argv){
     exit(1);
   }
   
-
   // for now, apply the same limit to all sockets
   int i;
   for (i = 0; i < config.sockets; i++){
@@ -83,7 +82,12 @@ int main(int argc, char ** argv){
 #ifdef ARCH_062D
       write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
-    }else{
+    }else{ // enable
+      write_msr(i, MSR_PP0_POLICY, 31);
+#ifdef ARCH_062A
+      write_msr(i, MSR_PP1_POLICY, 0);
+#endif
+
       if(!PKG_Watts && !PP0_Watts){
 	fprintf(stderr, "no limits supplied\n");
 	exit(1);
