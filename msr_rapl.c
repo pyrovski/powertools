@@ -267,7 +267,7 @@ get_power_limit( int socket, int domain, struct power_limit_s *limit, struct pow
 				fprintf(stderr, "%s::%d BADNESS!  limit->time_multiplier_2 = %lx!\n",
 						__FILE__, __LINE__, limit->time_multiplier_2 );
 		}
-		limit->time_window_2_sec	= UNIT_SCALE(limit->time_window_2, units->time) 
+		limit->time_window_2_sec	= UNIT_SCALE(1 << limit->time_window_2, units->time) 
 						  *
 						  limit->time_multiplier_float_2;
 		limit->power_limit_2_watts	= UNIT_SCALE(limit->power_limit_2, units->power);
@@ -284,7 +284,7 @@ get_power_limit( int socket, int domain, struct power_limit_s *limit, struct pow
 					__FILE__, __LINE__, limit->time_multiplier_1 );
 	}
 
-	limit->time_window_1_sec	= UNIT_SCALE(limit->time_window_1, units->time) 
+	limit->time_window_1_sec	= UNIT_SCALE(1 << limit->time_window_1, units->time) 
 					  *
 					  limit->time_multiplier_float_1;
 	/*
