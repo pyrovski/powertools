@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include "msr_rapl.h"
 #include "msr_core.h"
 #include "cpuid.h"
@@ -37,17 +38,40 @@ int main(int argc, char ** argv){
 
   int enable = 1;
   int enableSupplied = 0;
-  int PKG_Window = 1;
   int readOnly = 0;
   int opt;
-  float PKG_Watts = 0, PP0_Watts = 0;
+  float PKG_Watts = 0, PP0_Watts = 0, PKG_Watts2 = 0;
   int windowSize = 0;
+  int window2Size = 0;
 
+  int w2Flag = 0;
+  int p2Flag = 0;
+  struct option options[] = {
+    {"w2", 1, &w2Flag, 1},
+    {"P2", 1, &p2Flag, 1},
+    {0, 0, 0, 0}
+  };
+  int optionIndex = -1;
+  
   /*
     get desired performance levels
    */
-  while((opt = getopt(argc, argv, "ed2r0:P:w:")) != -1){
+  while((opt = getopt_long(argc, argv, "edr0:P:w:", options, &optionIndex)) != -1){
     switch(opt){
+    case 0: // long options
+      switch(optionIndex){
+      case 0:
+	window2Size = strtoul(optarg, 0, 0);
+	break;
+      case 1:
+	PKG_Watts2 = strtoul(optarg, 0, 0);
+	break;
+      default:
+	fprintf(stderr, 
+		"invalid long option index: %d\n", optionIndex);
+	exit(1);
+      }
+      break;
     case 'e':
       enableSupplied = 1;
       break;
@@ -60,9 +84,6 @@ int main(int argc, char ** argv){
       break;
     case 'P':
       PKG_Watts = strtof(optarg, 0);
-      break;
-    case '2':
-      PKG_Window = 2;
       break;
     case 'w':
       windowSize = strtoul(optarg, 0, 0);
@@ -88,6 +109,13 @@ int main(int argc, char ** argv){
 	    "cannot enable rapl in read-only mode\n");
     exit(1);
   }
+
+  if(w2Flag && !p2Flag){
+    fprintf(stderr, 
+	    "must also supply 2nd power limit if 2nd window given\n");
+    exit(1);
+  }
+
   
   if(!readOnly){
     // for now, apply the same limit to all sockets
@@ -104,9 +132,9 @@ int main(int argc, char ** argv){
 	write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
       }else{ // enable
-	write_msr(i, MSR_PP0_POLICY, 31);
+	write_msr(i, MSR_PP0_POLICY, 31); // favor cores
 #ifdef ARCH_062A
-	write_msr(i, MSR_PP1_POLICY, 0);
+	write_msr(i, MSR_PP1_POLICY, 0); // over GPUs?
 #endif
 
 	if(!PKG_Watts && !PP0_Watts && enable){
@@ -119,33 +147,40 @@ int main(int argc, char ** argv){
 	       i, config.map_socket_to_core[i][0],
 	       PKG_Watts, PP0_Watts);
 #endif
-	if(PKG_Watts){
-	  if(PKG_Window == 1){
-	    struct power_limit_s power_limit = {
-	      .lock = 0,
-	      .clamp_1 = 1,
-	      .enable_1 = 1,
-	      .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
-	      .time_multiplier_1 = (windowSize >> 5) & 0b11,
-	      .time_window_1 = windowSize & 0b11111,
-	      .enable_2 = 0,
-	      .clamp_2 = 0
-	    };
-	    set_power_limit(i, PKG_DOMAIN, &power_limit);
-	  } else {
-	    struct power_limit_s power_limit = {
-	      .lock = 0,
-	      .clamp_2 = 1,
-	      .enable_2 = 1,
-	      .power_limit_2 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
-	      .time_multiplier_2 = (windowSize >> 5) & 0b11,
-	      .time_window_2 = windowSize & 0b11111,
-	      .enable_1 = 0,
-	      .clamp_1 = 0
-	    };
-	    set_power_limit(i, PKG_DOMAIN, &power_limit);
+	if(PKG_Watts || PKG_Watts2){
+	  struct power_limit_s power_limit1 = {
+	    .lock = 0,
+	    .clamp_1 = 1,
+	    .enable_1 = 1,
+	    .power_limit_1 = UNIT_DESCALE(PKG_Watts, rapl_state.power_unit[i].power),
+	    .time_multiplier_1 = (windowSize >> 5) & 0b11,
+	    .time_window_1 = windowSize & 0b11111,
+	    .enable_2 = 0,
+	    .clamp_2 = 0
+	  };
+	  struct power_limit_s power_limit2 = {
+	    .lock = 0,
+	    .clamp_2 = 1,
+	    .enable_2 = 1,
+	    .power_limit_2 = UNIT_DESCALE(PKG_Watts2, rapl_state.power_unit[i].power),
+	    .time_multiplier_2 = (window2Size >> 5) & 0b11,
+	    .time_window_2 = window2Size & 0b11111,
+	    .enable_1 = 0,
+	    .clamp_1 = 0
+	  };
+	  if(PKG_Watts && !PKG_Watts2)
+	    set_power_limit(i, PKG_DOMAIN, &power_limit1);
+	  else if(!PKG_Watts && PKG_Watts2)
+	    set_power_limit(i, PKG_DOMAIN, &power_limit2);
+	  else{
+	    power_limit1.clamp_2 = power_limit2.clamp_2;
+	    power_limit1.enable_2 = power_limit2.enable_2;
+	    power_limit1.power_limit_2 = power_limit2.power_limit_2;
+	    power_limit1.time_multiplier_2 = power_limit2.time_multiplier_2;
+	    power_limit1.time_window_2 = power_limit2.time_window_2;
+	    set_power_limit(i, PKG_DOMAIN, &power_limit1);
 	  }
-	} else { // !PKG_Watts
+	} else { // !PKG_Watts && !PKG_Watts2
 	  write_msr( config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
 	}
 	if(PP0_Watts){
