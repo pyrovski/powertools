@@ -11,17 +11,6 @@
 //#define _DEBUG
 
 
-/*!
-  enable/disable turbo for all cores
- */
-
-
-
-
-
-
-
-
 void usage(const char * const argv0){
   fprintf(stderr, 
 	  "Usage: %s [-e for enable] [-d for disable] [-P <package watts>] "
