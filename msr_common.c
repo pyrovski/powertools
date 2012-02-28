@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <unistd.h>	// sleep()
 #include <sys/time.h>	// getttimeofday()
+#include <time.h>
+#include <signal.h>
+#include <assert.h>
 #include "msr_common.h"
-
-//int msr_debug;
 
 #ifdef TEST_HARNESS
 #include "msr_core.h"
@@ -19,8 +20,99 @@ spin(uint64_t i){
 }
 */
 
+static void handler(int sig){
+  if(msr_debug)
+    printf("caught signal: %d\n", sig);
+}
 
+static void msSample(const char * const filename){
+  struct power_unit_s units;
+  struct power_info_s info[NUM_DOMAINS];
+  double joules[NUM_DOMAINS]; 
+  uint64_t last_raw_joules[NUM_DOMAINS];
+  struct timeval now;
+#ifdef ARCH_062D
+  int i;
+#endif
 
+  FILE *file = fopen(filename, "w");
+  assert(file);
+
+  msr_debug=1;
+  get_rapl_power_unit(0, &units);
+
+  get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
+  get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+		    &last_raw_joules[PKG_DOMAIN]);
+  get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
+		    &last_raw_joules[PP0_DOMAIN]);
+#ifdef ARCH_062D
+  get_power_info(0, DRAM_DOMAIN, 	&info[DRAM_DOMAIN],	&units);
+#endif
+#ifdef ARCH_062A
+  get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
+		    &last_raw_joules[PP1_DOMAIN]);
+#endif
+
+    fprintf(stderr, "timestamp\tpkg_J\tpp0\t"
+#ifdef ARCH_062A
+	    "pp1_J"
+#endif
+#ifdef ARCH_062D
+	    "dram_J"
+#endif
+	    "\n");
+    
+
+  sigset_t s;
+  sigemptyset(&s);
+  sigaddset(&s, SIGALRM);
+
+  struct sigaction sa = {.sa_handler= &handler, 
+			 .sa_mask = s, 
+			 .sa_flags = 0, 
+			 .sa_restorer = 0};
+  int status = sigaction(SIGALRM, &sa, 0);
+
+  timer_t timerID;
+  status = timer_create(CLOCK_MONOTONIC, 0, &timerID);
+  struct itimerspec ts = {{0, 1500000}, // 1.5ms
+			  {0, 1500000}};
+  status = timer_settime(timerID, 0, &ts, 0);
+
+  msr_debug = 0;
+  
+  while(1){
+    gettimeofday(&now, NULL);
+    get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
+		      &last_raw_joules[PKG_DOMAIN]);
+    get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
+		      &last_raw_joules[PP0_DOMAIN]);
+#ifdef ARCH_062A
+    get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
+		      &last_raw_joules[PP1_DOMAIN]);
+#endif
+#ifdef ARCH_062D
+    get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
+		      &last_raw_joules[DRAM_DOMAIN]);
+#endif
+    fprintf(stderr, "%0lu.%0lu\t%15.10lf\t%15.10lf\t%15.10lf\n", 
+	    now.tv_sec, 
+	    now.tv_usec,
+	    joules[PKG_DOMAIN],
+	    joules[PP0_DOMAIN],
+#ifdef ARCH_062A
+	    joules[PP1_DOMAIN]
+#endif
+#ifdef ARCH_062D
+	    joules[DRAM_DOMAIN]
+#endif
+	    );
+    sigwaitinfo(&s, 0); // timer will wake us up
+  }
+
+  return;
+}
 
 static void
 test_power_meters(){
@@ -109,9 +201,11 @@ int
 main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
+	if(argc > 1)
+	  msSample(argv[1]);
 	test_power_meters();
 	if(0){
-		test_pebs();
+	  test_pebs();
 	}
 	return 0;
 }

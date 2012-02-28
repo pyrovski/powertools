@@ -29,7 +29,7 @@ blr_util.o: blr_util.h blr_util.c Makefile
 $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
  msr_opt.o blr_util.o
 	gcc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o\
- msr_common.o msr_core.o msr_opt.o blr_util.o
+ msr_common.o msr_core.o msr_opt.o blr_util.o -lrt
 
 install: $(library) msr_rapl.h msr_core.h blr_util.h msr_freq.h turbo rapl_clamp
 	install -m 0644 -t $(HOME)/local/include msr_rapl.h msr_core.h\
