@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <assert.h>
 #include "msr_common.h"
+#include "blr_util.h"
 
 #ifdef TEST_HARNESS
 #include "msr_core.h"
@@ -25,19 +26,24 @@ static void handler(int sig){
     printf("caught signal: %d\n", sig);
 }
 
-static void msSample(const char * const filename){
+static void msSample(const char * const filename, int log){
   struct power_unit_s units;
   struct power_info_s info[NUM_DOMAINS];
   double joules[NUM_DOMAINS]; 
   uint64_t last_raw_joules[NUM_DOMAINS];
   struct timeval now;
+  gettimeofday(&now, NULL);
+
 #ifdef ARCH_062D
   int i;
 #endif
 
-  FILE *file = fopen(filename, "w");
-  assert(file);
-
+  FILE *file = 0;
+  if(log){
+    file = fopen(filename, "w");
+    assert(file);
+  }
+  
   msr_debug=1;
   get_rapl_power_unit(0, &units);
 
@@ -54,9 +60,9 @@ static void msSample(const char * const filename){
 		    &last_raw_joules[PP1_DOMAIN]);
 #endif
 
-    fprintf(stderr, "timestamp\tpkg_J\tpp0\t"
+    fprintf(file, "timestamp\tpkg_J\tpp0_J\t"
 #ifdef ARCH_062A
-	    "pp1_J"
+	    //"pp1_J"
 #endif
 #ifdef ARCH_062D
 	    "dram_J"
@@ -76,13 +82,18 @@ static void msSample(const char * const filename){
 
   timer_t timerID;
   status = timer_create(CLOCK_MONOTONIC, 0, &timerID);
-  struct itimerspec ts = {{0, 1500000}, // 1.5ms
-			  {0, 1500000}};
+  struct itimerspec ts = {{0, 4000000}, // 4ms
+			  {0, 4000000}};
   status = timer_settime(timerID, 0, &ts, 0);
 
   msr_debug = 0;
   
+  double PKG_max_watts = 0, PP0_max_watts = 0;
+  double PKG_total_joules, PP0_total_joules, delta;
+  struct timeval last, lastPrint = {0,0};
+
   while(1){
+    last = now;
     gettimeofday(&now, NULL);
     get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
 		      &last_raw_joules[PKG_DOMAIN]);
@@ -96,21 +107,40 @@ static void msSample(const char * const filename){
     get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
 		      &last_raw_joules[DRAM_DOMAIN]);
 #endif
-    fprintf(stderr, "%0lu.%0lu\t%15.10lf\t%15.10lf\t%15.10lf\n", 
-	    now.tv_sec, 
-	    now.tv_usec,
-	    joules[PKG_DOMAIN],
-	    joules[PP0_DOMAIN],
+    if(log){
+      fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
+	      //"\t%15.10lf"
+	      "\n", 
+	      now.tv_sec, 
+	      now.tv_usec,
+	      joules[PKG_DOMAIN],
+	      joules[PP0_DOMAIN]
 #ifdef ARCH_062A
-	    joules[PP1_DOMAIN]
+	      //,joules[PP1_DOMAIN]
 #endif
 #ifdef ARCH_062D
-	    joules[DRAM_DOMAIN]
+	      ,joules[DRAM_DOMAIN]
 #endif
-	    );
+	      );
+    }
+    PKG_max_watts = max(PKG_max_watts, joules[PKG_DOMAIN]/ts_delta(&last, &now));
+    PP0_max_watts = max(PP0_max_watts, joules[PP0_DOMAIN]/ts_delta(&last, &now));
+    PKG_total_joules += joules[PKG_DOMAIN];
+    PP0_total_joules += joules[PP0_DOMAIN];
+    delta = ts_delta(&lastPrint, &now);
+    if(delta > 1){
+      fprintf(stderr, "max 1ms-power, average power in last second: "
+	      "PKG: %10lf, %10lf, PP0: %10lf, %10lf\n", 
+	      PKG_max_watts, PKG_total_joules / delta, 
+	      PP0_max_watts, PP0_total_joules / delta);
+      lastPrint = now;
+      PKG_max_watts = 0;
+      PP0_max_watts = 0;
+      PKG_total_joules = 0;
+      PP0_total_joules = 0;
+    }
     sigwaitinfo(&s, 0); // timer will wake us up
   }
-
   return;
 }
 
@@ -143,7 +173,7 @@ test_power_meters(){
 				  &last_raw_joules[PP0_DOMAIN]);
 		get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
 				  &last_raw_joules[PP1_DOMAIN]);
-		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  pp1_J= %15.10lf\n", 
+		fprintf(stderr, "timestamp= %0ld.%.6ld  pkg_J= %15.10lf  pp0_J= %15.10lf  pp1_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[PP1_DOMAIN] );
 		sleep(1);
@@ -169,7 +199,7 @@ test_power_meters(){
 			  &last_raw_joules[DRAM_DOMAIN]);
 		get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
 			  &last_raw_joules[DRAM_DOMAIN]);
-		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
+		fprintf(stderr, "timestamp= %0ld.%.6ld  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[DRAM_DOMAIN] );
 		sleep(10);
@@ -202,7 +232,7 @@ main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
 	if(argc > 1)
-	  msSample(argv[1]);
+	  msSample(argv[1], 1);
 	test_power_meters();
 	if(0){
 	  test_pebs();
