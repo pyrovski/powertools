@@ -31,11 +31,12 @@ $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
 	gcc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o\
  msr_common.o msr_core.o msr_opt.o blr_util.o -lrt
 
-install: $(library) msr_rapl.h msr_core.h blr_util.h msr_freq.h turbo rapl_clamp
-	install -m 0644 -t $(HOME)/local/include msr_rapl.h msr_core.h\
+install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_freq.h turbo rapl_clamp
+	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h\
  blr_util.h msr_freq.h
-	install -m 0644 -t $(HOME)/local/lib $(library)
+	install -m 0644 -t $(HOME)/local/lib/ $(library)
 	install -m 0744 -t $(HOME)/local/bin/ turbo rapl_clamp
+	install -m 0755 -t $(HOME)/local/bin/ $(target)
 
 $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o
 	gcc -shared -Wl,-soname,$(library) -o $(library) $^
