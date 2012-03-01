@@ -42,7 +42,7 @@ test_power_meters(){
 		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
 		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
 		get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units);
-		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  pp1_J= %15.10lf\n", 
+		fprintf(stderr, "timestamp= %0ld.%.6ld  pkg_J= %15.10lf  pp0_J= %15.10lf  pp1_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[PP1_DOMAIN] );
 		sleep(1);
@@ -62,7 +62,7 @@ test_power_meters(){
 		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units);
 		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units);
 		get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units);
-		fprintf(stderr, "timestamp= %0lu.%0lu  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
+		fprintf(stderr, "timestamp= %0ld.%.6ld  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
 			now.tv_sec, now.tv_usec,
 			joules[PKG_DOMAIN],joules[PP0_DOMAIN],joules[DRAM_DOMAIN] );
 		sleep(10);
