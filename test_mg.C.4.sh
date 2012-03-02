@@ -3,7 +3,8 @@
 # 1st arg = pkg power limit in watts
 # 2nd arg = raw pkg timing window
 # no args = no limit
-name=mg.C.4
+nprocs=4
+name=mg.C.$nprocs
 
 #disable OS DVFS
 sudo bash -c 'echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'
@@ -22,7 +23,7 @@ sleep .01s
 
 # run benchmark
 #likwid-perfctr -g ENERGY -c S0:0-3 -m likwid-bench -i 500000 -g 1 -t peakflops_avx -w S0:5MB > bench_P`printf "%03u" $1`_w`printf "%02u" $2`.log 2>&1
-mpirun -n 4 ../bin/mg.C.4 >$oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.log
+mpirun -n $nprocs ../bin/mg.C.$nprocs >$oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.log
 
 # stop logging
 for job in `jobs -p`
