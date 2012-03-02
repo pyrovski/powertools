@@ -107,6 +107,9 @@ static void msSample(const char * const filename, int log){
     get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
 		      &last_raw_joules[DRAM_DOMAIN]);
 #endif
+    //! @todo freq
+    //read_aperf_mperf(0, &aperf, &mperf);
+
     if(log){
       fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
 	      //"\t%15.10lf"

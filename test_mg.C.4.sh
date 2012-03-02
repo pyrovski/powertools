@@ -34,4 +34,4 @@ do
 done
 
 # plot logged data with provided settings in filename
-plot.R $oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.dat $oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.pdf
+plot.R $oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.dat $oldDir/${name}_P`printf "%03u" $1`_w`printf "%02u" $2`.pdf $name
