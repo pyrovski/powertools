@@ -35,8 +35,10 @@ t = a$timestamp[2:l] - a$timestamp[1]
 l = length(a[,1])
 p = a$pkg_J[2:l] / b
 
-pkgAvgPower = sum(a$pkg_J)/(a$timestamp[l] - a$timestamp[1])
+# @todo this is wrong
+#pkgAvgPower = sum(a$pkg_J)/(a$timestamp[l] - a$timestamp[1])
 
 pdf(args[2])
-plot(t, p, pch='.', xlab='time (s)', ylab='power (w)', sub=paste('mean pkg power:', pkgAvgPower, 'w'), main=paste(name, 'power vs time'))
+plot(t, p, pch='.', xlab='time (s)', ylab='power (w)', main=paste(name, 'power vs time'))
+#sub=paste('mean pkg power:', pkgAvgPower, 'w')
 dev.off()
