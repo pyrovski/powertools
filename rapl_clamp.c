@@ -13,9 +13,10 @@
 
 void usage(const char * const argv0){
   fprintf(stderr, 
-	  "Usage: %s [-e for enable] [-d for disable] [-P <package watts>] "
-	  "[-0 PP0 watts] [-2 for 2nd PKG timing window] "
-	  "[-w <window value (int)>] [-r to read values only]\n", 
+	  "Usage: %s [-e for enable] [-d for disable] [-P <package watt limit>] "
+	  "[--P2 <2nd PKG watt limit>]"
+	  "[-0 <PP0 watt limit>] [--w2 <2nd PKG timing window>] "
+	  "[-w <raw window value (int)>] [-r to read values only (/tmp/rampl_clamp)]\n", 
 	  argv0);
 }
 
