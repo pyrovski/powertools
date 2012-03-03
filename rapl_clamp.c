@@ -16,7 +16,7 @@ void usage(const char * const argv0){
 	  "Usage: %s [-e for enable] [-d for disable] [-P <package watt limit>] "
 	  "[--P2 <2nd PKG watt limit>]"
 	  "[-0 <PP0 watt limit>] [--w2 <2nd PKG timing window>] "
-	  "[-w <raw window value (int)>] [-r to read values only (/tmp/rampl_clamp)]\n", 
+	  "[-w <raw window value (int)>] [-r to read values only (/tmp/rapl_clamp)]\n", 
 	  argv0);
 }
 
