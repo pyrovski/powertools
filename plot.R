@@ -36,16 +36,21 @@ j = a$pkg_J[2:l]
 p = j / b
 
 meanSamplePeriod = mean(b)
-print(meanSamplePeriod)
+#print(meanSamplePeriod)
 
 table = cbind(t, j, b, p)
 o = order(p, decreasing=T)
 #print.table(table[o[1:50],])
 
 # @todo this is wrong?
-#pkgAvgPower = sum(a$pkg_J)/(a$timestamp[l] - a$timestamp[1])
+pkgAvgPower = sum(a$pkg_J)/(a$timestamp[l] - a$timestamp[1])
 
 pdf(args[2])
-plot(t, p, pch='.', xlab='time (s)', ylab='power (w)', main=paste(name, 'power vs time'))
-#sub=paste('mean pkg power:', pkgAvgPower, 'w')
+plot(t, p, pch='.', xlab='time (s)', ylab='power (w)', main=paste(name, 'power vs time'), sub=paste('mean pkg power:', format(pkgAvgPower, digits=3), 'w, mtbs:', format(meanSamplePeriod, digits=2, scientific=T)))
+dev.off()
+
+pdf(paste('hist', args[2], sep=''))
+h = hist(p, breaks=1000, xlab='watts', freq=F, main=paste(name, 'histogram of power samples'))
+#smoothed = filter(h$counts, rep(1, 10))
+#barplot(smoothed[which(!is.na(smoothed))], ylab='density', xlab='watts')
 dev.off()
