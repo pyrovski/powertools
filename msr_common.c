@@ -76,6 +76,10 @@ convert_raw_joules_delta(const uint64_t *j1,
   return UNIT_SCALE(delta_joules, units->energy);
 }
 
+/*! @todo make a function to sample as fast as possible
+  to determine underlying update pattern
+ */
+
 static void msSample(const char * const filename, int log){
   struct power_unit_s units;
   struct power_info_s info[NUM_DOMAINS];
