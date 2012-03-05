@@ -7,7 +7,7 @@ rapl_clamp -d
 rapl_clamp -e -P $1 -w $2
 
 # start logging
-msr output_P`printf "%03u" $1`_w`printf "%02u" $2`.dat &
+hwloc-bind socket:0.pu:0 msr output_P`printf "%03u" $1`_w`printf "%02u" $2`.dat &
 
 sleep .01s
 
