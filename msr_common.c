@@ -114,25 +114,7 @@ static void msSample(const char * const filename, int log){
     assert(logFile);
   }
   
-  msr_debug=1;
-  get_rapl_power_unit(0, &units);
-
-  get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
-
-  gettimeofday(&now, NULL);
-  tsc = rdtsc();
-  get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
-		    &last_raw_joules[PKG_DOMAIN]);
-  get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
-		    &last_raw_joules[PP0_DOMAIN]);
-#ifdef ARCH_062D
-  get_power_info(0, DRAM_DOMAIN, 	&info[DRAM_DOMAIN],	&units);
-#endif
-#ifdef ARCH_062A
-  get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
-		    &last_raw_joules[PP1_DOMAIN]);
-#endif
-
+  if(log){
     fprintf(logFile, "timestamp\tpkg_J\tpp0_J\t"
 #ifdef ARCH_062A
 	    //"pp1_J"
@@ -141,7 +123,18 @@ static void msSample(const char * const filename, int log){
 	    "dram_J"
 #endif
 	    "\n");
-    
+    fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
+	    //"\t%15.10lf"
+	    "\n", 
+	    0.0, 0.0, 0.0
+#ifdef ARCH_062A
+	    //,joules[PP1_DOMAIN]
+#endif
+#ifdef ARCH_062D
+	    ,0.0
+#endif
+	    );
+  }
 
   sigset_t s;
   sigemptyset(&s);
@@ -157,29 +150,52 @@ static void msSample(const char * const filename, int log){
   status = timer_create(CLOCK_MONOTONIC, 0, &timerID);
   struct itimerspec ts = {{0, 100000}, // .1ms
 			  {0, 100000}};
-  status = timer_settime(timerID, 0, &ts, 0);
+
+  msr_debug=1;
+  get_rapl_power_unit(0, &units);
+
+  get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
 
   msr_debug = 0;
 
-  if(log){
-    fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
-	    //"\t%15.10lf"
-	    "\n", 
-	    0.0, 0.0, 0.0
-#ifdef ARCH_062A
-	    //,joules[PP1_DOMAIN]
-#endif
-#ifdef ARCH_062D
-	    ,0.0
-#endif
-	    );
+  get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+		    &last_raw_joules[PKG_DOMAIN]);
+
+  get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+		    &last_raw_joules[PKG_DOMAIN]);
+  // synchronize with an update
+  while(!joules[PKG_DOMAIN]){    
+    usleep(10);
+    get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+		      &last_raw_joules[PKG_DOMAIN]);
   }
+  gettimeofday(&now, NULL);
+  tsc = rdtsc();  
+  
+  status = timer_settime(timerID, 0, &ts, 0);
+
+  get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
+		    &last_raw_joules[PKG_DOMAIN]);
+  get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
+		    &last_raw_joules[PP0_DOMAIN]);
+#ifdef ARCH_062D
+  get_power_info(0, DRAM_DOMAIN, 	&info[DRAM_DOMAIN],	&units);
+#endif
+#ifdef ARCH_062A
+  get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
+		    &last_raw_joules[PP1_DOMAIN]);
+#endif
+
+
+
   
   double PKG_max_watts = 0, PP0_max_watts = 0;
   double PKG_total_joules = 0, PP0_total_joules = 0, delta;
   uint64_t lastPrint = 0, lastNonzero = tsc;
+  int glitch = 0;
 
   while(1){
+    sigwaitinfo(&s, 0); // timer will wake us up
     tsc = rdtsc();
 
     get_raw_energy_status(0, PKG_DOMAIN, &last_raw_joules_tmp[PKG_DOMAIN]);
@@ -194,17 +210,33 @@ static void msSample(const char * const filename, int log){
     //read_aperf_mperf(0, &aperf, &mperf);
 
     // wait for an update
+    //! @todo this needs fixing
     if(last_raw_joules_tmp[PKG_DOMAIN] == last_raw_joules[PKG_DOMAIN]){
-      sigwaitinfo(&s, 0); // timer will wake us up
       continue;
     }
 
     double nzDelta = tsc_delta(&lastNonzero, &tsc, &tsc_rate);
-
     if(nzDelta < .001){ // wait at least 1ms
-      sigwaitinfo(&s, 0); // timer will wake us up
+      /*! @todo flag these in the log.
+	Updates seem to come in two time bases, ~1 KHz and ~100 Hz.
+	I'm guessing they correspond to distinct segments of the chip.
+	If I sample frequently enough, I can separate the updates by frequency.	
+       */
+      if(!glitch){
+	/*
+	fprintf(logFile, "#%lf\t%lf\tglitch \n", 
+		time + nzDelta,
+		nzDelta
+		);
+	*/
+	glitch = 1;
+      }
+      last_raw_joules_tmp[PKG_DOMAIN] = last_raw_joules[PKG_DOMAIN];
       continue;
     }
+    glitch = 0;
+
+    lastNonzero = tsc;
 
     // convert raw joules
     joules[PKG_DOMAIN] = 
@@ -258,7 +290,6 @@ static void msSample(const char * const filename, int log){
     }
     PKG_max_watts = max(PKG_max_watts, joules[PKG_DOMAIN]/nzDelta);
     PP0_max_watts = max(PP0_max_watts, joules[PP0_DOMAIN]/nzDelta);
-    lastNonzero = tsc;
     PKG_total_joules += joules[PKG_DOMAIN];
     PP0_total_joules += joules[PP0_DOMAIN];
     delta = tsc_delta(&lastPrint, &tsc, &tsc_rate);
@@ -273,8 +304,7 @@ static void msSample(const char * const filename, int log){
       PKG_total_joules = 0;
       PP0_total_joules = 0;
     }
-    sigwaitinfo(&s, 0); // timer will wake us up
-  }
+  } // while(1)
   
   //! @todo calculate average power
   
