@@ -61,15 +61,28 @@ static double measure_tsc(){
   return (tsc1 < tsc2 ? (tsc2 - tsc1) : (tsc1 - tsc2)) / ts_delta(&t1, &t2);
 }
 
+static inline 
+double
+convert_raw_joules_delta(const uint64_t *j1, 
+			 const uint64_t *j2,
+			 const struct power_unit_s *units){
+  uint64_t delta_joules;
+
+  // FIXME:  This will give a wrong answer if we've wrapped around multiple times.
+  delta_joules = *j2 - *j1;
+  if( *j2 < *j1){
+    delta_joules += 0x100000000;
+  }
+  return UNIT_SCALE(delta_joules, units->energy);
+}
+
 static void msSample(const char * const filename, int log){
   struct power_unit_s units;
   struct power_info_s info[NUM_DOMAINS];
   double joules[NUM_DOMAINS]; 
-  uint64_t last_raw_joules[NUM_DOMAINS];
+  uint64_t last_raw_joules[NUM_DOMAINS], last_raw_joules_tmp[NUM_DOMAINS];
   struct timeval now;
   uint64_t tsc;
-  gettimeofday(&now, NULL);
-  tsc = rdtsc();
   double time = 0;
 
 
@@ -105,6 +118,9 @@ static void msSample(const char * const filename, int log){
   get_rapl_power_unit(0, &units);
 
   get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
+
+  gettimeofday(&now, NULL);
+  tsc = rdtsc();
   get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
 		    &last_raw_joules[PKG_DOMAIN]);
   get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
@@ -149,9 +165,7 @@ static void msSample(const char * const filename, int log){
     fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
 	    //"\t%15.10lf"
 	    "\n", 
-	    0.0, 
-	    0.0,
-	    0.0
+	    0.0, 0.0, 0.0
 #ifdef ARCH_062A
 	    //,joules[PP1_DOMAIN]
 #endif
@@ -160,36 +174,73 @@ static void msSample(const char * const filename, int log){
 #endif
 	    );
   }
-
   
   double PKG_max_watts = 0, PP0_max_watts = 0;
   double PKG_total_joules = 0, PP0_total_joules = 0, delta;
   uint64_t lastPrint = 0, lastNonzero = tsc;
 
   while(1){
-    //gettimeofday(&now, NULL);
     tsc = rdtsc();
 
-    get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
-		      &last_raw_joules[PKG_DOMAIN]);
-    get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
-		      &last_raw_joules[PP0_DOMAIN]);
+    get_raw_energy_status(0, PKG_DOMAIN, &last_raw_joules_tmp[PKG_DOMAIN]);
+    get_raw_energy_status(0, PP0_DOMAIN, &last_raw_joules_tmp[PP0_DOMAIN]);
 #ifdef ARCH_062A
-    get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
-		      &last_raw_joules[PP1_DOMAIN]);
+    get_raw_energy_status(0, PP1_DOMAIN, &last_raw_joules_tmp[PP1_DOMAIN]);
 #endif
 #ifdef ARCH_062D
-    get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
-		      &last_raw_joules[DRAM_DOMAIN]);
+    get_raw_energy_status(0, DRAM_DOMAIN, &last_raw_joules_tmp[DRAM_DOMAIN]);
 #endif
     //! @todo freq
     //read_aperf_mperf(0, &aperf, &mperf);
 
-    if(!joules[PKG_DOMAIN])
+    // wait for an update
+    if(last_raw_joules_tmp[PKG_DOMAIN] == last_raw_joules[PKG_DOMAIN]){
+      sigwaitinfo(&s, 0); // timer will wake us up
       continue;
+    }
 
     double nzDelta = tsc_delta(&lastNonzero, &tsc, &tsc_rate);
+
+    if(nzDelta < .001){ // wait at least 1ms
+      sigwaitinfo(&s, 0); // timer will wake us up
+      continue;
+    }
+
+    // convert raw joules
+    joules[PKG_DOMAIN] = 
+      convert_raw_joules_delta(&last_raw_joules[PKG_DOMAIN], 
+			       &last_raw_joules_tmp[PKG_DOMAIN], 
+			       &units);
+    joules[PP0_DOMAIN] = 
+      convert_raw_joules_delta(&last_raw_joules[PP0_DOMAIN], 
+			       &last_raw_joules_tmp[PP0_DOMAIN], 
+			       &units);
+#ifdef ARCH_062A
+    joules[PP1_DOMAIN] = 
+      convert_raw_joules_delta(&last_raw_joules[PP1_DOMAIN], 
+			       &last_raw_joules_tmp[PP1_DOMAIN], 
+			       &units);
+#endif
+#ifdef ARCH_062D
+    joules[DRAM_DOMAIN] = 
+      convert_raw_joules_delta(&last_raw_joules[DRAM_DOMAIN], 
+			       &last_raw_joules_tmp[DRAM_DOMAIN], 
+			       &units);
+#endif
+
+    last_raw_joules[PKG_DOMAIN] = last_raw_joules_tmp[PKG_DOMAIN];
+    last_raw_joules[PP0_DOMAIN] = last_raw_joules_tmp[PP0_DOMAIN];
+#ifdef ARCH_062A
+    last_raw_joules[PP1_DOMAIN] = last_raw_joules_tmp[PP1_DOMAIN];
+#endif
+#ifdef ARCH_062D
+    last_raw_joules[DRAM_DOMAIN] = last_raw_joules_tmp[DRAM_DOMAIN];
+#endif
+
     time += nzDelta;
+
+    // don't log the suspect readings
+    // && joules[PKG_DOMAIN] < info[PKG_DOMAIN].thermal_spec_power_watts
     if(log){
       fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
 	      //"\t%15.10lf"
@@ -224,6 +275,9 @@ static void msSample(const char * const filename, int log){
     }
     sigwaitinfo(&s, 0); // timer will wake us up
   }
+  
+  //! @todo calculate average power
+  
   return;
 }
 
