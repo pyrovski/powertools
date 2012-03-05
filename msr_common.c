@@ -34,6 +34,7 @@ static void msSample(const char * const filename, int log){
   struct timeval now;
   gettimeofday(&now, NULL);
 
+
 #ifdef ARCH_062D
   int i;
 #endif
@@ -82,18 +83,35 @@ static void msSample(const char * const filename, int log){
 
   timer_t timerID;
   status = timer_create(CLOCK_MONOTONIC, 0, &timerID);
-  struct itimerspec ts = {{0, 4000000}, // 4ms
-			  {0, 4000000}};
+  struct itimerspec ts = {{0, 100000}, // .1ms
+			  {0, 100000}};
   status = timer_settime(timerID, 0, &ts, 0);
 
   msr_debug = 0;
+
+  if(log){
+    fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
+	    //"\t%15.10lf"
+	    "\n", 
+	    now.tv_sec, 
+	    now.tv_usec,
+	    0.0,
+	    0.0
+#ifdef ARCH_062A
+	    //,joules[PP1_DOMAIN]
+#endif
+#ifdef ARCH_062D
+	    ,0.0
+#endif
+	    );
+  }
+
   
   double PKG_max_watts = 0, PP0_max_watts = 0;
   double PKG_total_joules, PP0_total_joules, delta;
-  struct timeval last, lastPrint = {0,0};
+  struct timeval lastPrint = {0,0}, lastNonzero = now;
 
   while(1){
-    last = now;
     gettimeofday(&now, NULL);
     get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
 		      &last_raw_joules[PKG_DOMAIN]);
@@ -109,6 +127,9 @@ static void msSample(const char * const filename, int log){
 #endif
     //! @todo freq
     //read_aperf_mperf(0, &aperf, &mperf);
+
+    if(!joules[PKG_DOMAIN])
+      continue;
 
     if(log){
       fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
@@ -126,8 +147,10 @@ static void msSample(const char * const filename, int log){
 #endif
 	      );
     }
-    PKG_max_watts = max(PKG_max_watts, joules[PKG_DOMAIN]/ts_delta(&last, &now));
-    PP0_max_watts = max(PP0_max_watts, joules[PP0_DOMAIN]/ts_delta(&last, &now));
+    double nzDelta = ts_delta(&lastNonzero, &now);
+    PKG_max_watts = max(PKG_max_watts, joules[PKG_DOMAIN]/nzDelta);
+    PP0_max_watts = max(PP0_max_watts, joules[PP0_DOMAIN]/nzDelta);
+    lastNonzero = now;
     PKG_total_joules += joules[PKG_DOMAIN];
     PP0_total_joules += joules[PP0_DOMAIN];
     delta = ts_delta(&lastPrint, &now);
