@@ -6,6 +6,8 @@
 #include <time.h>
 #include <signal.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdlib.h>
 #include "msr_common.h"
 #include "blr_util.h"
 
@@ -26,23 +28,77 @@ static void handler(int sig){
     printf("caught signal: %d\n", sig);
 }
 
+static inline uint64_t rdtsc(void)
+{
+  // use cpuid instruction to serialize
+  asm volatile ("xorl %%eax,%%eax \n cpuid"
+		::: "%rax", "%rbx", "%rcx", "%rdx");
+  // compiler should eliminate one code path
+  if (sizeof(long) == sizeof(uint64_t)) {
+    uint32_t lo, hi;
+    asm volatile("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64_t)(hi) << 32) | lo;
+  }
+  else {
+    uint64_t tsc;
+    asm volatile("rdtsc" : "=A" (tsc));
+    return tsc;
+  }
+}
+
+static inline double tsc_delta(const uint64_t *now, const uint64_t *then, 
+			       const double *tsc_rate){
+  return (*now >= *then ? (*now - *then) : (*then - *now))/ *tsc_rate;
+}
+
+static double measure_tsc(){
+  struct timeval t1, t2;
+  gettimeofday(&t1, 0);
+  uint64_t tsc1 = rdtsc();
+  sleep(1);
+  gettimeofday(&t2, 0);
+  uint64_t tsc2 = rdtsc();
+  return (tsc1 < tsc2 ? (tsc2 - tsc1) : (tsc1 - tsc2)) / ts_delta(&t1, &t2);
+}
+
 static void msSample(const char * const filename, int log){
   struct power_unit_s units;
   struct power_info_s info[NUM_DOMAINS];
   double joules[NUM_DOMAINS]; 
   uint64_t last_raw_joules[NUM_DOMAINS];
   struct timeval now;
+  uint64_t tsc;
   gettimeofday(&now, NULL);
+  tsc = rdtsc();
+  double time = 0;
 
 
 #ifdef ARCH_062D
   int i;
 #endif
 
-  FILE *file = 0;
+  double tsc_rate;
+  FILE *rateFile = fopen("/tmp/tsc_rate", "r");
+  //! @todo measure/read tsc rate
+  if(!rateFile && errno == ENOENT){
+    tsc_rate = measure_tsc();
+    rateFile = fopen("/tmp/tsc_rate", "w");
+    fprintf(rateFile, "%lf\n", tsc_rate);
+  }else if(rateFile){
+    // get rate from file
+    fscanf(rateFile, "%lf", &tsc_rate);
+  } else {
+    perror("error opening /tmp/tsc_rate");
+    exit(1);
+  }
+  fclose(rateFile);
+
+  fprintf(stderr, "tsc rate: %lf\n", tsc_rate);
+
+  FILE *logFile = 0;
   if(log){
-    file = fopen(filename, "w");
-    assert(file);
+    logFile = fopen(filename, "w");
+    assert(logFile);
   }
   
   msr_debug=1;
@@ -61,7 +117,7 @@ static void msSample(const char * const filename, int log){
 		    &last_raw_joules[PP1_DOMAIN]);
 #endif
 
-    fprintf(file, "timestamp\tpkg_J\tpp0_J\t"
+    fprintf(logFile, "timestamp\tpkg_J\tpp0_J\t"
 #ifdef ARCH_062A
 	    //"pp1_J"
 #endif
@@ -90,11 +146,10 @@ static void msSample(const char * const filename, int log){
   msr_debug = 0;
 
   if(log){
-    fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
+    fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
 	    //"\t%15.10lf"
 	    "\n", 
-	    now.tv_sec, 
-	    now.tv_usec,
+	    0.0, 
 	    0.0,
 	    0.0
 #ifdef ARCH_062A
@@ -108,11 +163,13 @@ static void msSample(const char * const filename, int log){
 
   
   double PKG_max_watts = 0, PP0_max_watts = 0;
-  double PKG_total_joules, PP0_total_joules, delta;
-  struct timeval lastPrint = {0,0}, lastNonzero = now;
+  double PKG_total_joules = 0, PP0_total_joules = 0, delta;
+  uint64_t lastPrint = 0, lastNonzero = tsc;
 
   while(1){
-    gettimeofday(&now, NULL);
+    //gettimeofday(&now, NULL);
+    tsc = rdtsc();
+
     get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
 		      &last_raw_joules[PKG_DOMAIN]);
     get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
@@ -131,12 +188,13 @@ static void msSample(const char * const filename, int log){
     if(!joules[PKG_DOMAIN])
       continue;
 
+    double nzDelta = tsc_delta(&lastNonzero, &tsc, &tsc_rate);
+    time += nzDelta;
     if(log){
-      fprintf(file, "%0ld.%.6ld\t%15.10lf\t%15.10lf"
+      fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
 	      //"\t%15.10lf"
 	      "\n", 
-	      now.tv_sec, 
-	      now.tv_usec,
+	      time,
 	      joules[PKG_DOMAIN],
 	      joules[PP0_DOMAIN]
 #ifdef ARCH_062A
@@ -147,19 +205,18 @@ static void msSample(const char * const filename, int log){
 #endif
 	      );
     }
-    double nzDelta = ts_delta(&lastNonzero, &now);
     PKG_max_watts = max(PKG_max_watts, joules[PKG_DOMAIN]/nzDelta);
     PP0_max_watts = max(PP0_max_watts, joules[PP0_DOMAIN]/nzDelta);
-    lastNonzero = now;
+    lastNonzero = tsc;
     PKG_total_joules += joules[PKG_DOMAIN];
     PP0_total_joules += joules[PP0_DOMAIN];
-    delta = ts_delta(&lastPrint, &now);
+    delta = tsc_delta(&lastPrint, &tsc, &tsc_rate);
     if(delta > 1){
       fprintf(stderr, "max 1ms-power, average power in last second: "
 	      "PKG: %10lf, %10lf, PP0: %10lf, %10lf\n", 
 	      PKG_max_watts, PKG_total_joules / delta, 
 	      PP0_max_watts, PP0_total_joules / delta);
-      lastPrint = now;
+      lastPrint = tsc;
       PKG_max_watts = 0;
       PP0_max_watts = 0;
       PKG_total_joules = 0;
