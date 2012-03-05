@@ -24,7 +24,7 @@ if(length(sel) > 0){
 }
 
 # remove outliers due to overflow
-sel = intersect(which(a$pkg_J > 2.5*median(a$pkg_J)), which(a$pp0_J > 2.5*median(a$pp0_J)))
+sel = union(which(a$pkg_J > 2.5*median(a$pkg_J)), which(a$pp0_J > 2.5*median(a$pp0_J)))
 if(length(sel) > 0){
   a = a[-sel,]
 }
@@ -32,10 +32,17 @@ if(length(sel) > 0){
 l = length(a[,1])
 b = a$timestamp[2:l] - a$timestamp[1:(l-1)]
 t = a$timestamp[2:l] - a$timestamp[1]
-l = length(a[,1])
-p = a$pkg_J[2:l] / b
+j = a$pkg_J[2:l]
+p = j / b
 
-# @todo this is wrong
+meanSamplePeriod = mean(b)
+print(meanSamplePeriod)
+
+table = cbind(t, j, b, p)
+o = order(p, decreasing=T)
+#print.table(table[o[1:50],])
+
+# @todo this is wrong?
 #pkgAvgPower = sum(a$pkg_J)/(a$timestamp[l] - a$timestamp[1])
 
 pdf(args[2])
