@@ -32,9 +32,10 @@ dev.off();dev.new();
 plot(pp0_P)
 dev.off();dev.new();
 ccf(pkg_P, pp0_P)
-dev.off();dev.new();
-ccf(pkg_timestamp, pp0_timestamp)
 mean(pkg_timestamp - pp0_timestamp)
 dev.off();dev.new();
 ccf(pkg_i, pp0_i)
-
+dev.off();dev.new();
+hist(pkg_P)
+dev.off();dev.new();
+hist(pp0_P)
