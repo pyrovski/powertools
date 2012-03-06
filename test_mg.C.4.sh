@@ -7,7 +7,7 @@ nprocs=4
 name=mg.C.$nprocs
 
 #disable OS DVFS
-sudo bash -c 'echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'
+#sudo bash -c 'echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'
 
 oldDir=`pwd`
 
