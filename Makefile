@@ -33,9 +33,9 @@ $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
 	gcc -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o\
  msr_common.o msr_core.o msr_opt.o blr_util.o -lrt
 
-install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_freq.h turbo rapl_clamp plot.R
+install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_freq.h msr_common.h turbo rapl_clamp plot.R
 	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h\
- blr_util.h msr_freq.h
+ blr_util.h msr_freq.h msr_common.h
 	install -m 0644 -t $(HOME)/local/lib/ $(library)
 	install -m 0744 -t $(HOME)/local/bin/ turbo rapl_clamp $(target) plot.R
 

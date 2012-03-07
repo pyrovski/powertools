@@ -28,6 +28,9 @@ init_msr(){
 		return;
 	}
 	for (i=0; i<NUM_PACKAGES; i++){
+	  /*! @todo check this msr selection; it may be incorrect on some
+	    machines, e.g. non-fio hyperion nodes
+	   */
 		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
 		fd[i] = open( filename, O_RDWR );
 		if(fd[i] == -1){
