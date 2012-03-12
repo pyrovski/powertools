@@ -123,9 +123,9 @@ int main(int argc, char ** argv){
 	write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
       }else{ // enable
-	write_msr( config.map_socket_to_core[my_socket][0], MSR_PP0_POLICY, 31); // favor cores
+	write_msr( config.map_socket_to_core[i][0], MSR_PP0_POLICY, 31); // favor cores
 #ifdef ARCH_062A
-	write_msr( config.map_socket_to_core[my_socket][0], MSR_PP1_POLICY, 0); // over GPUs?
+	write_msr( config.map_socket_to_core[i][0], MSR_PP1_POLICY, 0); // over GPUs?
 #endif
 
 	if(!PKG_Watts && !PP0_Watts && enable){
