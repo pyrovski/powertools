@@ -599,8 +599,8 @@ main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
 	if(argc > 1)
-	  //msSample(argv[1], 1);
-	  poll(argv[1], 1);
+	  msSample(argv[1], 1);
+	//poll(argv[1], 1);
 	test_power_meters();
 	if(0){
 	  test_pebs();
