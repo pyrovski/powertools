@@ -130,18 +130,18 @@ static void poll(const char * const filename, int log){
   if(log){
     fprintf(logFile, "timestamp\tpkg_J\tpp0_J\t"
 #ifdef ARCH_062A
-	    //"pp1_J"
+	    "pp1_J"
 #endif
 #ifdef ARCH_062D
 	    "dram_J"
 #endif
 	    "\n");
     fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
-	    //"\t%15.10lf"
+	    "\t%15.10lf"
 	    "\n", 
 	    0.0, 0.0, 0.0
 #ifdef ARCH_062A
-	    //,joules[PP1_DOMAIN]
+	    ,0.0
 #endif
 #ifdef ARCH_062D
 	    ,0.0
@@ -256,13 +256,13 @@ static void poll(const char * const filename, int log){
     // && joules[PKG_DOMAIN] < info[PKG_DOMAIN].thermal_spec_power_watts
     if(log){
       fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
-	      //"\t%15.10lf"
+	      "\t%15.10lf"
 	      "\n", 
 	      time,
 	      joules[PKG_DOMAIN],
 	      joules[PP0_DOMAIN]
 #ifdef ARCH_062A
-	      //,joules[PP1_DOMAIN]
+	      ,joules[PP1_DOMAIN]
 #endif
 #ifdef ARCH_062D
 	      ,joules[DRAM_DOMAIN]
@@ -317,18 +317,18 @@ static void msSample(const char * const filename, int log){
   if(log){
     fprintf(logFile, "timestamp\tpkg_J\tpp0_J\t"
 #ifdef ARCH_062A
-	    //"pp1_J"
+	    "pp1_J"
 #endif
 #ifdef ARCH_062D
 	    "dram_J"
 #endif
 	    "\n");
     fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
-	    //"\t%15.10lf"
+	    "\t%15.10lf"
 	    "\n", 
 	    0.0, 0.0, 0.0
 #ifdef ARCH_062A
-	    //,joules[PP1_DOMAIN]
+	    ,0.0
 #endif
 #ifdef ARCH_062D
 	    ,0.0
@@ -475,13 +475,13 @@ static void msSample(const char * const filename, int log){
     // && joules[PKG_DOMAIN] < info[PKG_DOMAIN].thermal_spec_power_watts
     if(log){
       fprintf(logFile, "%lf\t%15.10lf\t%15.10lf"
-	      //"\t%15.10lf"
+	      "\t%15.10lf"
 	      "\n", 
 	      time,
 	      joules[PKG_DOMAIN],
 	      joules[PP0_DOMAIN]
 #ifdef ARCH_062A
-	      //,joules[PP1_DOMAIN]
+	      ,joules[PP1_DOMAIN]
 #endif
 #ifdef ARCH_062D
 	      ,joules[DRAM_DOMAIN]
