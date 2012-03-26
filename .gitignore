@@ -4,3 +4,7 @@ msr
 TAGS
 lib/
 localConfig
+*.dat
+*.pdf
+*.log
+*~
