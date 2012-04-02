@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -26,7 +27,17 @@ void usage(const char * const argv0){
 
 int main(int argc, char ** argv){
   struct rapl_state_s rapl_state;
-  FILE *f = fopen("/tmp/rapl_clamp", "w");
+
+  int core, socket, local;
+  parse_proc_cpuinfo();
+  int status = get_cpuid(&core, &socket, &local);
+
+  char filename[256], hostname[256];
+  gethostname(hostname, 256);
+  snprintf(filename, 256, "rapl_clamp_%s_socket_%d", hostname, socket);
+  filename[255] = 0;
+  FILE *f = fopen(filename, "w");
+  assert(f);
   rapl_init(&rapl_state, argc, argv, f, 1);
   parse_proc_cpuinfo();
 
