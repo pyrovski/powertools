@@ -19,7 +19,7 @@ static int msr_rank_mod=1;
 	{{callfn}}
 	rank = -1;
 	PMPI_Comm_rank( MPI_COMM_WORLD, &rank );
-	get_env_int("MSR_RANK_MOD", &msr_rank_mod);
+	get_env_int("MSR_RANK_MOD", &msr_rank_mod, 1);
 	if(rank%msr_rank_mod == 0){
 		gethostname( hostname, 1024 );
 		f = safe_mkstemp(hostname, "rapl", rank);

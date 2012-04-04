@@ -26,10 +26,13 @@ safe_mkstemp( const char *hostname, const char *tag, int mpi_rank ){
 	return f;
 }
 
-void get_env_int(const char *name, int *val){
+void get_env_int(const char *name, int *val, int defaultVal){
 	char *str;
 	str = getenv(name);
-	*val = (int) strtol(str, (char **)NULL, 0);
+	if(str)
+	  *val = (int) strtol(str, (char **)NULL, 0);
+	else
+	  *val = defaultVal;
 }
 
 	
