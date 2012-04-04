@@ -6,6 +6,7 @@
 #include "msr_rapl.h"
 #include "msr_opt.h"
 #include "blr_util.h"
+#include "cpuid.h"
 
 static int rank;
 static char hostname[1025];
@@ -16,6 +17,7 @@ struct rapl_state_s s;
 static int msr_rank_mod=1;
 
 {{fn foo MPI_Init}}
+     parse_proc_cpuinfo();
 	{{callfn}}
 	rank = -1;
 	PMPI_Comm_rank( MPI_COMM_WORLD, &rank );
@@ -24,8 +26,9 @@ static int msr_rank_mod=1;
 		gethostname( hostname, 1024 );
 		f = safe_mkstemp(hostname, "rapl", rank);
 		init_msr();
-		disable_turbo(0);
-		disable_turbo(1);
+		int socket;
+		for(socket = 0; socket < config.sockets; socket++)
+		  disable_turbo(socket);
 		rapl_init(&s, *{{0}}, *{{1}}, f ,1);
 	}
 {{endfn}}
