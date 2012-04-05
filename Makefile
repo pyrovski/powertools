@@ -1,13 +1,10 @@
-# Note:  Sandy Bridge Core is -DARCH_062A
-# 	 Sandy Bridge Xeon is -DARCH_062D
-
 target=msr
 library=libmsr.so
 
 DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DPKG_PERF_STATUS_AVAILABLE
 
-# put your local -DARCH_062A or -DARCH_062D in here
--include localConfig
+# Machine- and compiler-specific information goes here:
+-include localConfig.d/localConfig
 
 ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
@@ -16,7 +13,7 @@ DEFINES +=-O2
 endif
 
 CFLAGS=-fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS}
-CC=gcc
+CC=mpicc
 
 all: $(target) $(library) turbo rapl_clamp
 
