@@ -148,8 +148,7 @@ struct rapl_state_s{
 };
 
 void
-rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f, 
-	  int print_header);
+rapl_init(struct rapl_state_s *s, FILE *f, int print_header);
 
 void 
 rapl_finalize( struct rapl_state_s *s, int reset_limits);

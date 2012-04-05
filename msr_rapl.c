@@ -411,8 +411,7 @@ set_policy( int socket, int domain, uint64_t policy ){
 
 
 void
-rapl_init(struct rapl_state_s *s, int argc, char **argv, FILE *f, 
-	  int print_header){
+rapl_init(struct rapl_state_s *s, FILE *f, int print_header){
 	int socket;
 	init_msr();
 	//parse_opts( argc, argv );

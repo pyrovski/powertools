@@ -26,7 +26,6 @@ static int msr_rank_mod=1;
 		init_msr();
 		disable_turbo(0);
 		disable_turbo(1);
-		//s=rapl_init( *{{0}}, *{{1}}, f );
 	}
 {{endfn}}
 

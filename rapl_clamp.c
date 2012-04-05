@@ -27,7 +27,7 @@ void usage(const char * const argv0){
 int main(int argc, char ** argv){
   struct rapl_state_s rapl_state;
   FILE *f = fopen("/tmp/rapl_clamp", "w");
-  rapl_init(&rapl_state, argc, argv, f, 1);
+  rapl_init(&rapl_state, f, 1);
   parse_proc_cpuinfo();
 
   int enable = 1;
