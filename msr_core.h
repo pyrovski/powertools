@@ -11,8 +11,8 @@ enum{
 };
 void init_msr();
 void finalize_msr();
-void write_msr(int cpu, off_t msr, uint64_t val);
-void read_msr(int cpu, off_t msr, uint64_t *val);
+void write_msr(int socket, off_t msr, uint64_t val);
+void read_msr(int socket, off_t msr, uint64_t *val);
 void read_modify_write_msr( int cpu, off_t msr, uint64_t mask, int op );
 void write_and_validate_msr( int cpu, off_t msr, uint64_t val );
 #endif //MSR_CORE_H
