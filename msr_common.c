@@ -89,6 +89,8 @@ convert_raw_joules_delta(const uint64_t *j1,
   the graphics portion of the chip.  This also indicates that 
   the consumer chips do not measure memory power in the PKG domain.
  */
+
+#if 0
 static void poll(const char * const filename, int log){
   struct power_unit_s units;
   struct power_info_s info[NUM_DOMAINS];
@@ -510,7 +512,6 @@ static void msSample(const char * const filename, int log){
   
   return;
 }
-
 static void
 test_power_meters(){
 	struct power_unit_s units;
@@ -607,5 +608,6 @@ main(int argc, char **argv){
 	}
 	return 0;
 }
+#endif //0
 
 #endif //TEST_HARNESS
