@@ -16,6 +16,8 @@ extern int msr_debug;
 #define UNIT_SCALE(x,y) ((x)/(double)(1<<(y)))
 #define UNIT_DESCALE(x,y) ((x)*(double)(1<<(y)))
 
+double measure_tsc();
+
 static inline uint64_t rdtsc(void)
 {
   // use cpuid instruction to serialize

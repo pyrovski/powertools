@@ -15,7 +15,7 @@ safe_mkstemp( const char *hostname, const char *tag, int mpi_rank ){
 	char *benchmark;
 	benchmark = getenv("BLR_BENCHMARK");
 	sprintf(filename, "%s_%s_%s_%04d__XXXXXX", hostname, tag, benchmark, mpi_rank);
-	fprintf(stderr, "filename=%s\n", filename);
+	//fprintf(stderr, "filename=%s\n", filename);
 	fd=mkstemp(filename);
 	if(fd==-1){
 		fprintf(stderr, "%s::%d  Error opening %s for reading.\n", __FILE__, __LINE__, filename);

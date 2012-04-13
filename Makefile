@@ -30,13 +30,13 @@ msr_turbo.o:  Makefile msr_core.o            msr_turbo.c  msr_turbo.h
 msr_opt.o:    Makefile msr_core.o msr_rapl.o msr_opt.c    msr_opt.h 
 msr_clocks.o: Makefile msr_core.o            msr_clocks.h msr_clocks.h
 blr_util.o:   Makefile                       blr_util.h   blr_util.c 
-cpuid.o: cpuid.h Makefile
-
+cpuid.o:      Makefile cpuid.h
+rapl_poll.o:  Makefile rapl_poll.c
+sample.o:     Makefile sample.c
 
 $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
- msr_opt.o blr_util.o cpuid.o
-	$(CC) -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o\
- msr_common.o msr_core.o msr_opt.o blr_util.o -lrt
+ msr_opt.o blr_util.o cpuid.o rapl_poll.o sample.o
+	$(CC) -fPIC -Wall ${DEFINES} -o $(target) $^ -lrt
 
 install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_freq.h msr_common.h turbo rapl_clamp plot.R
 	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h\
