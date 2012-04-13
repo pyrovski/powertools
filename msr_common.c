@@ -117,6 +117,11 @@ test_pebs(){
 extern void rapl_poll(const char * const filename, int log);
 extern void msSample(const char * const filename, int log);
 
+void usage(const char *name){
+  printf("%s [-p <poll output>] [-s <sample output>]"
+	 " [-m (test power meters)] [-b (test pebs)]\n", name);
+}
+
 int
 main(int argc, char **argv){
 	msr_debug=1;
@@ -127,22 +132,28 @@ main(int argc, char **argv){
 	  switch(status){
 	  case 'p':
 	    rapl_poll(optarg, 1);
+	    return 0;
 	    break;
 	  case 's':
 	    msSample(optarg, 1);
+	    return 0;
 	    break;
 	  case 'm':
 	    test_power_meters();
+	    return 0;
 	    break;
 	  case 'b':
 	    test_pebs();
+	    return 0;
 	    break;
 	  default:
+	    usage(argv[0]);
 	    exit(1);
 	    break;
 	  }
 	}
 	
+	usage(argv[0]);
 	return 0;
 }
 
