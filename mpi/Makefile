@@ -1,4 +1,10 @@
-rapl:
+all:	rapl
+
+
+../lib:
+	mkdir -p ../lib
+
+rapl: ../lib rapl.w wrap.py
 	mkdir -p ../lib
 	./wrap.py -f -g -o rapl.c rapl.w
 	mpicc ${COMPILER_SPECIFIC_FLAGS} -DPIC -fPIC -I.. -DARCH_SANDY_BRIDGE -DARCH_062D -c rapl.c -o rapl.o

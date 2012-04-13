@@ -1,6 +1,10 @@
 *.o
 msr
 .*.swp
+TAGS
 lib/
-
-
+localConfig
+*.dat
+*.pdf
+*.log
+*~

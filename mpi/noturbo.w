@@ -11,7 +11,7 @@ static int rank;
 static char hostname[1025];
 extern int msr_debug;
 static FILE* f;
-struct rapl_state_s s;
+struct rapl_state *s;
 
 static int msr_rank_mod=1;
 
@@ -26,14 +26,13 @@ static int msr_rank_mod=1;
 		init_msr();
 		disable_turbo(0);
 		disable_turbo(1);
-		rapl_init(&s, f ,1);
 	}
 {{endfn}}
 
 {{fn foo MPI_Finalize}}
 	double elapsed;
 	if(rank%msr_rank_mod == 0){
-		rapl_finalize(&s, 1);
+		//rapl_finalize(s);
 	}
 	{{callfn}}
 {{endfn}}

@@ -1,25 +1,52 @@
-# Note:  Sandy Bridge Core is -DARCH_062A
-# 	 Sandy Bridge Xeon is -DARCH_062D
+target=msr
+library=libmsr.so
 
-DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DARCH_062D -DPKG_PERF_STATUS_AVAILABLE
+DEFINES=-DTEST_HARNESS -DARCH_SANDY_BRIDGE -DPKG_PERF_STATUS_AVAILABLE
 
-test_harness: msr_rapl msr_core msr_common msr_pebs blr_util msr_turbo msr_opt blr_util
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -o msr msr_opt.o msr_pebs.c msr_rapl.o msr_common.o msr_core.o blr_util.o
-msr_common: msr_rapl msr_common.c msr_common.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_common.c
-msr_core: msr_core.c msr_core.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_core.c
-msr_rapl: msr_core msr_rapl.c msr_rapl.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_rapl.c
-msr_pebs: msr_core msr_pebs.c msr_pebs.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_pebs.c
-msr_turbo:  msr_core msr_turbo.c msr_turbo.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_turbo.c
-msr_opt: msr_core msr_rapl msr_opt.c msr_opt.h Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c msr_opt.c
-blr_util: blr_util.h blr_util.c Makefile
-	mpicc -fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS} -c blr_util.c
+# Machine- and compiler-specific information goes here:
+-include localConfig.d/localConfig
+
+ifneq ($(dbg),)
+DEFINES +=-D_DEBUG=$(dbg) -g -pg
+else
+DEFINES +=-O2
+endif
+
+CFLAGS=-fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS}
+CC=mpicc
+
+all: $(target) $(library) turbo rapl_clamp
+
+msr_common.o: Makefile            msr_rapl.o msr_common.c msr_common.h 
+msr_core.o:   Makefile                       msr_core.c   msr_core.h 
+msr_rapl.o:   Makefile msr_core.o            msr_rapl.c   msr_rapl.h 
+msr_pebs.o:   Makefile msr_core.o            msr_pebs.c   msr_pebs.h 
+msr_turbo.o:  Makefile msr_core.o            msr_turbo.c  msr_turbo.h 
+msr_opt.o:    Makefile msr_core.o msr_rapl.o msr_opt.c    msr_opt.h 
+msr_clocks.o: Makefile msr_core.o            msr_clocks.h msr_clocks.h
+blr_util.o:   Makefile                       blr_util.h   blr_util.c 
+
+
+
+$(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
+ msr_opt.o blr_util.o
+	$(CC) -fPIC -Wall ${DEFINES} -o $(target) msr_pebs.c msr_rapl.o\
+ msr_common.o msr_core.o msr_opt.o blr_util.o -lrt
+
+install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_freq.h msr_common.h turbo rapl_clamp plot.R
+	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h\
+ blr_util.h msr_freq.h msr_common.h
+	install -m 0644 -t $(HOME)/local/lib/ $(library)
+	install -m 0744 -t $(HOME)/local/bin/ turbo rapl_clamp $(target) plot.R
+
+$(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_opt.o msr_clocks.o
+	$(CC) -shared -Wl,-soname,$(library) -o $(library) $^
+
+turbo: turbo.c cpuid.c msr_turbo.c msr_core.c
+	$(CC) $(CFLAGS) -o $@ $^
+
+rapl_clamp: rapl_clamp.c msr_core.c cpuid.c msr_rapl.c msr_opt.c blr_util.c
+	$(CC) $(CFLAGS) -o $@ $^
+
 clean:
-	rm -f *.o
-
-
+	rm -f *.o $(target) $(library) turbo rapl_clamp
