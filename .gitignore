@@ -8,3 +8,5 @@ localConfig
 *.pdf
 *.log
 *~
+*.so
+*.tgz
