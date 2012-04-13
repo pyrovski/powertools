@@ -23,25 +23,15 @@ spin(uint64_t i){
 }
 */
 
-static void handler(int sig){
-  if(msr_debug)
-    printf("caught signal: %d\n", sig);
+double measure_tsc(){
+  struct timeval t1, t2;
+  gettimeofday(&t1, 0);
+  uint64_t tsc1 = rdtsc();
+  sleep(1);
+  gettimeofday(&t2, 0);
+  uint64_t tsc2 = rdtsc();
+  return (tsc1 < tsc2 ? (tsc2 - tsc1) : (tsc1 - tsc2)) / ts_delta(&t1, &t2);
 }
-
-
-/*! a function to sample as fast as possible
-  to determine underlying update pattern.
-
-  From some sample data, it appears that PKG and PP0 power planes
-  update from the same timebase, but with PKG and PP0 updates
-  occurring independently, with PP0 updates occurring and average of
-  1.292881e-06s after PKG updates, though the accuracy of this number
-  may be affected by the efficiency of the measurement loop.
-
-  PKG and PP0 power samples are highly correlated, as I am not using 
-  the graphics portion of the chip.  This also indicates that 
-  the consumer chips do not measure memory power in the PKG domain.
- */
 
 static void
 test_power_meters(){
@@ -124,19 +114,35 @@ test_pebs(){
 	return;
 }
 
-
+extern void rapl_poll(const char * const filename, int log);
+extern void msSample(const char * const filename, int log);
 
 int
 main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
-	if(argc > 1)
-	  //msSample(argv[1], 1);
-	//poll(argv[1], 1);
-	test_power_meters();
-	if(0){
-	  test_pebs();
+
+	int status;
+	while((status = getopt(argc, argv, "p:s:mb")) != -1){
+	  switch(status){
+	  case 'p':
+	    rapl_poll(optarg, 1);
+	    break;
+	  case 's':
+	    msSample(optarg, 1);
+	    break;
+	  case 'm':
+	    test_power_meters();
+	    break;
+	  case 'b':
+	    test_pebs();
+	    break;
+	  default:
+	    exit(1);
+	    break;
+	  }
 	}
+	
 	return 0;
 }
 
