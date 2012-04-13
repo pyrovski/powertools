@@ -38,7 +38,7 @@ int main(int argc, char ** argv){
   filename[255] = 0;
   FILE *f = fopen(filename, "w");
   assert(f);
-  rapl_init(&rapl_state, argc, argv, f, 1);
+  rapl_init(&rapl_state, f, 1);
   parse_proc_cpuinfo();
 
   int enable = 1;

@@ -11,7 +11,6 @@
 // yy = Event Select
 
 // These are the PEBS-enabled counters.		  	//  xxyy 
-/*
 static const uint16_t UNUSED_COUNTER			= 0x0000;
 static const uint16_t INSTR_RETIRED__ANY_P		= 0x00c0;
 static const uint16_t X87_OPS_RETIRED__ANY		= 0xfec1;
@@ -22,7 +21,7 @@ static const uint16_t MEM_LOAD_RETIRED__L1D_LINE_MISS	= 0x02cb;
 static const uint16_t MEM_LOAD_RETIRED__L2_MISS		= 0x04cb;
 static const uint16_t MEM_LOAD_RETIRED__L2_LINE_MISS	= 0x08cb;
 static const uint16_t MEM_LOAD_RETIRED__DTLB_MISS	= 0x10cb;
-*/
+
 struct pebs{
 	uint64_t eflags;// 0x00
 	uint64_t eip;	// 0x08
