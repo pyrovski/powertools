@@ -30,7 +30,7 @@ int main(int argc, char ** argv){
 
   int core, socket, local;
   parse_proc_cpuinfo();
-  int status = get_cpuid(&core, &socket, &local);
+  get_cpuid(&core, &socket, &local);
 
   char filename[256], hostname[256];
   gethostname(hostname, 256);
