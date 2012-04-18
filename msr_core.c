@@ -61,6 +61,10 @@ void
 write_msr(int socket, off_t msr, uint64_t val){
 	int rc;
 	char error_msg[1025];
+	if(msr_debug){
+	  fprintf(stderr, "%s::%d write msr=0x%lx val=0x%lx\n",
+		  __FILE__, __LINE__, msr, val);
+        }
 	rc = pwrite( fd[socket], &val, (size_t)sizeof(uint64_t), msr );
 	if( rc != sizeof(uint64_t) ){
 		snprintf( error_msg, 1024, "%s::%d  pwrite returned %d.  fd[%d]=%d, socket=%d, msr=%ld (%lx), val=%ld (0x%lx).  errno=%d\n", 
