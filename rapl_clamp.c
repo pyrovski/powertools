@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <string.h>
 #include "msr_rapl.h"
 #include "msr_core.h"
 #include "cpuid.h"
@@ -21,7 +22,9 @@ void usage(const char * const argv0){
 	  "[--P2 <2nd PKG watt limit>] "
 	  "[--w2 <2nd PKG timing window>] "
 	  "[-0 <PP0 watt limit>] "
-	  "[-w <raw window value (int)>] [-r to read values only (/tmp/rapl_clamp)]\n", 
+	  "[-w <raw window value (int)>] "
+	  "[-r to read values only (/tmp/rapl_clamp by default)] "
+	  "[-o <summary output>]\n", 
 	  argv0);
 }
 
@@ -34,12 +37,8 @@ int main(int argc, char ** argv){
 
   char filename[256], hostname[256];
   gethostname(hostname, 256);
+  FILE *f = 0;
   snprintf(filename, 256, "rapl_clamp_%s_socket_%d", hostname, socket);
-  filename[255] = 0;
-  FILE *f = fopen(filename, "w");
-  assert(f);
-  rapl_init(&rapl_state, f, 1);
-  parse_proc_cpuinfo();
 
   int enable = 1;
   int enableSupplied = 0;
@@ -61,11 +60,12 @@ int main(int argc, char ** argv){
   };
   int optionIndex = -1;
   
-  /*
+  /*!
     get desired performance levels
+    @todo to run within rapl_clamp, use getopt "+" to supply args to execvp()
    */
   while((opt = getopt_long(argc, argv, 
-			   "edr0:P:w:"
+			   "edr0:P:w:o:"
 			   #ifdef ARCH_062D
 			   "D:"
 			   #endif
@@ -109,11 +109,20 @@ int main(int argc, char ** argv){
       DRAM_Watts = strtof(optarg, 0);
       break;
 #endif
+    case 'o':
+      strncpy(filename, optarg, 256);
+      break;
     default:
       usage(argv[0]);
       exit(1);
     }
   }
+
+  filename[255] = 0;
+  f = fopen(filename, "w");
+  assert(f);
+  rapl_init(&rapl_state, f, 1);
+
   if((enable == 0) && 
      (PP0_Watts != 0 || PKG_Watts != 0 
 #ifdef ARCH_062D
