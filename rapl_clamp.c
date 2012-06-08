@@ -26,7 +26,8 @@ void usage(const char * const argv0){
 	  "[-0 <PP0 watt limit>] "
 	  "[-w <raw window value (int)>] "
 	  "[-r to read values only (/tmp/rapl_clamp by default)] "
-	  "[-o <summary output>]\n", 
+	  "[-o <summary output>]\n"
+	  "Limits will be applied to all sockets.\n", 
 	  argv0);
 }
 
@@ -40,7 +41,7 @@ int main(int argc, char ** argv){
   char filename[256], hostname[256];
   gethostname(hostname, 256);
   FILE *f = 0;
-  snprintf(filename, 256, "rapl_clamp_%s_socket_%d", hostname, socket);
+  snprintf(filename, 256, "rapl_clamp_%s", hostname);
 
   int enable = 1;
   int enableSupplied = 0;
