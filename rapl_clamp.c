@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "msr_rapl.h"
 #include "msr_core.h"
 #include "cpuid.h"
@@ -65,7 +67,7 @@ int main(int argc, char ** argv){
     @todo to run within rapl_clamp, use getopt "+" to supply args to execvp()
    */
   while((opt = getopt_long(argc, argv, 
-			   "edr0:P:w:o:"
+			   "+edr0:P:w:o:"
 			   #ifdef ARCH_062D
 			   "D:"
 			   #endif
@@ -260,6 +262,27 @@ int main(int argc, char ** argv){
       } // if(!enable) else
     } // for
   } // if(!readOnly)
+
+  if(optind < argc){
+    int status;
+    pid_t pid;
+    pid = fork();
+    if(!pid){
+      status = execvp(argv[optind], argv + optind);
+      if(status){
+	// complain
+	perror("execvp failed");
+	return -1;
+      }
+    } else if(pid == -1){
+	perror("fork failed");
+	return -1;
+    } else {
+      
+      // wait for program to quit
+      wait(&status);
+    }
+  }
 
   // don't reset MSRs on exit
   rapl_finalize(&rapl_state, 0);
