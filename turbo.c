@@ -3,7 +3,6 @@
 #include "msr_turbo.h"
 #include "msr_core.h"
 #include "cpuid.h"
-#include "msr_clocks.h"
 
 //#define _DEBUG
 
