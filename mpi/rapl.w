@@ -17,7 +17,6 @@ struct rapl_state_s s;
 static int msr_rank_mod=1;
 
 {{fn foo MPI_Init}}
-     parse_proc_cpuinfo();
 	{{callfn}}
 	rank = -1;
 	PMPI_Comm_rank( MPI_COMM_WORLD, &rank );

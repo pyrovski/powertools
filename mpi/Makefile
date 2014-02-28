@@ -1,6 +1,6 @@
 all:	../lib/librapl.so test_rapl
 
-objects=../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../msr_opt.o ../cpuid.o rapl.o
+objects=../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../cpuid.o rapl.o
 
 test_rapl: test_rapl.c ../lib/librapl.so
 	install -m 0644 ../lib/librapl.so $(HOME)/local/lib

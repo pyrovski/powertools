@@ -4,8 +4,8 @@
 #include "msr_common.h"
 #include "msr_core.h"
 #include "msr_rapl.h"
-#include "msr_opt.h"
 #include "blr_util.h"
+#include "cpuid.h"
 
 static void print_rapl_state_header(struct rapl_state_s *s);
 
@@ -24,7 +24,7 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 void
 get_rapl_power_unit(int socket, struct power_unit_s *units){
 	uint64_t val;
-	read_msr( socket, MSR_RAPL_POWER_UNIT, &val );
+	read_msr( config.map_socket_to_core[socket][0], MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
 	//p->energy = (val & MASK_RANGE(12, 8) ); // page 14(29).
 	//p->time	  = (val & MASK_RANGE(19,16) );
@@ -57,17 +57,18 @@ domain2str( int domain ){
 
 void
 get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
+	int core = config.map_socket_to_core[socket][0];
 	switch(domain){
-		case PKG_DOMAIN: 	read_msr( socket, MSR_PKG_ENERGY_STATUS, raw_joules );	
+		case PKG_DOMAIN: 	read_msr( core, MSR_PKG_ENERGY_STATUS, raw_joules );	
 					break;
-		case PP0_DOMAIN: 	read_msr( socket, MSR_PP0_ENERGY_STATUS, raw_joules );	
+		case PP0_DOMAIN: 	read_msr( core, MSR_PP0_ENERGY_STATUS, raw_joules );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_ENERGY_STATUS, raw_joules );	
+		case PP1_DOMAIN: 	read_msr( core, MSR_PP1_ENERGY_STATUS, raw_joules );	
 					break;
 #endif
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr( socket, MSR_DRAM_ENERGY_STATUS, raw_joules );		
+		case DRAM_DOMAIN:	read_msr( core, MSR_DRAM_ENERGY_STATUS, raw_joules );		
 				 	break;
 #endif
 		default: 		assert(0);						
@@ -101,11 +102,12 @@ get_energy_status(int socket, int domain, double *joules,
 
 void
 get_raw_power_info( int socket, int domain, uint64_t *pval ){
+	int core = config.map_socket_to_core[socket][0];
 	switch(domain){
-		case PKG_DOMAIN:	read_msr( socket, MSR_PKG_POWER_INFO, pval );		
+		case PKG_DOMAIN:	read_msr( core, MSR_PKG_POWER_INFO, pval );		
 					break;
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr( socket, MSR_DRAM_POWER_INFO, pval );		
+		case DRAM_DOMAIN:	read_msr( core, MSR_DRAM_POWER_INFO, pval );		
 					break;
 #endif
 		default:		assert(0); // Not avail for PP0/PP1 domains.
@@ -115,8 +117,10 @@ get_raw_power_info( int socket, int domain, uint64_t *pval ){
 
 void
 get_power_info( int socket, int domain, struct power_info_s *info, struct power_unit_s *units ){
+	int core = config.map_socket_to_core[socket][0];
+	
 	uint64_t val;
-	get_raw_power_info( socket, domain, &val );
+	get_raw_power_info( core, domain, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
 	info->max_power	   		= MASK_VAL(val,46,32);
 	info->min_power	   		= MASK_VAL(val,30,16);
@@ -151,17 +155,19 @@ get_power_info( int socket, int domain, struct power_info_s *info, struct power_
 
 void
 get_raw_power_limit( int socket, int domain, uint64_t *pval ){
+	int core = config.map_socket_to_core[socket][0];
+
 	switch(domain){
-		case PKG_DOMAIN: 	read_msr( socket, MSR_PKG_POWER_LIMIT, pval );
+		case PKG_DOMAIN: 	read_msr( core, MSR_PKG_POWER_LIMIT, pval );
 					break;
-		case PP0_DOMAIN: 	read_msr( socket, MSR_PP0_POWER_LIMIT, pval );
+		case PP0_DOMAIN: 	read_msr( core, MSR_PP0_POWER_LIMIT, pval );
 					break;
 #ifdef ARCH_062A				
-		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_POWER_LIMIT, pval );
+		case PP1_DOMAIN: 	read_msr( core, MSR_PP1_POWER_LIMIT, pval );
 					break;
 #endif
 #ifdef ARCH_062D				
-		case DRAM_DOMAIN: 	read_msr( socket, MSR_DRAM_POWER_LIMIT, pval );
+		case DRAM_DOMAIN: 	read_msr( core, MSR_DRAM_POWER_LIMIT, pval );
 					break;
 #endif
 		default:		assert(0);
@@ -171,17 +177,19 @@ get_raw_power_limit( int socket, int domain, uint64_t *pval ){
 
 void
 set_raw_power_limit( int socket, int domain, uint64_t val ){
+	int core = config.map_socket_to_core[socket][0];
+
 	switch(domain){
-		case PKG_DOMAIN: 	write_msr( socket, MSR_PKG_POWER_LIMIT, val );	
+		case PKG_DOMAIN: 	write_msr( core, MSR_PKG_POWER_LIMIT, val );	
 					break;
-		case PP0_DOMAIN: 	write_msr( socket, MSR_PP0_POWER_LIMIT, val );	
+		case PP0_DOMAIN: 	write_msr( core, MSR_PP0_POWER_LIMIT, val );	
 					break;
 #ifdef ARCH_062A				
-		case PP1_DOMAIN: 	write_msr( socket, MSR_PP1_POWER_LIMIT, val );	
+		case PP1_DOMAIN: 	write_msr( core, MSR_PP1_POWER_LIMIT, val );	
 					break;
 #endif
 #ifdef ARCH_062D				
-		case DRAM_DOMAIN: 	write_msr( socket, MSR_DRAM_POWER_LIMIT, val );	
+		case DRAM_DOMAIN: 	write_msr( core, MSR_DRAM_POWER_LIMIT, val );	
 					break;
 #endif
 		default:		assert(0);					
@@ -340,13 +348,15 @@ get_power_limit( int socket, int domain, struct power_limit_s *limit, struct pow
 
 void
 get_raw_perf_status( int socket, int domain, uint64_t *pstatus ){
+	int core = config.map_socket_to_core[socket][0];
+
 	switch(domain){
 #ifdef PKG_PERF_STATUS_AVAILABLE
-		case PKG_DOMAIN: 	read_msr(socket, MSR_PKG_PERF_STATUS, pstatus);
+		case PKG_DOMAIN: 	read_msr(core, MSR_PKG_PERF_STATUS, pstatus);
 						break;
 #endif
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	read_msr(socket, MSR_DRAM_PERF_STATUS, pstatus);
+		case DRAM_DOMAIN:	read_msr(core, MSR_DRAM_PERF_STATUS, pstatus);
 						break;
 #endif
 		default:			assert(0);
@@ -369,11 +379,13 @@ get_perf_status( int socket, int domain, double *pstatus, struct power_unit_s *u
 
 void
 get_raw_policy( int socket, int domain, uint64_t *ppolicy ){
+	int core = config.map_socket_to_core[socket][0];
+
 	switch( domain ){
-		case PP0_DOMAIN:	read_msr( socket, MSR_PP0_POLICY, ppolicy );	
+		case PP0_DOMAIN:	read_msr( core, MSR_PP0_POLICY, ppolicy );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	read_msr( socket, MSR_PP1_POLICY, ppolicy );	
+		case PP1_DOMAIN: 	read_msr( core, MSR_PP1_POLICY, ppolicy );	
 					break;
 #endif
 		default:		assert(0);
@@ -383,11 +395,13 @@ get_raw_policy( int socket, int domain, uint64_t *ppolicy ){
 
 void
 set_raw_policy( int socket, int domain, uint64_t policy ){
+	int core = config.map_socket_to_core[socket][0];
+
 	switch( domain ){
-		case PP0_DOMAIN:	write_msr( socket, MSR_PP0_POLICY, policy );	
+		case PP0_DOMAIN:	write_msr( core, MSR_PP0_POLICY, policy );	
 					break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN: 	write_msr( socket, MSR_PP1_POLICY, policy );	
+		case PP1_DOMAIN: 	write_msr( core, MSR_PP1_POLICY, policy );	
 					break;
 #endif
 		default:		assert(0);
@@ -420,7 +434,7 @@ rapl_init(struct rapl_state_s *s, FILE *f, int print_header){
 	if(print_header)
 	  print_rapl_state_header(s);
 
-	for(socket=0; socket<NUM_PACKAGES; socket++){
+	for(socket=0; socket<config.sockets; socket++){
 		get_rapl_power_unit( socket, &(s->power_unit[socket]) );
 		get_power_info(    socket, PKG_DOMAIN,  &(s->power_info[socket][PKG_DOMAIN]),          &(s->power_unit[socket]) );
 #ifdef ARCH_062D
@@ -454,15 +468,16 @@ rapl_finalize( struct rapl_state_s *s, int reset_limits){
 	int socket;
 	gettimeofday( &(s->finish), NULL );
 	s->elapsed = ts_delta( &(s->prev), &(s->finish) );
-	for(socket=0; socket<NUM_PACKAGES; socket++){
+	for(socket=0; socket<config.sockets; socket++){
 		get_all_status(socket, s);
+		int core = config.map_socket_to_core[socket][0];
 
 		if(reset_limits){
 		  // Rest all limits.
-		  write_msr( socket, MSR_PKG_POWER_LIMIT, 0 );
-		  write_msr( socket, MSR_PP0_POWER_LIMIT, 0 );
+		  write_msr( core, MSR_PKG_POWER_LIMIT, 0 );
+		  write_msr( core, MSR_PP0_POWER_LIMIT, 0 );
 #ifdef ARCH_062D
-		  write_msr( socket, MSR_DRAM_POWER_LIMIT, 0 );
+		  write_msr( core, MSR_DRAM_POWER_LIMIT, 0 );
 #endif
 		}
 	}
@@ -529,7 +544,7 @@ void print_rapl_state(struct rapl_state_s *s){
   fprintf(s->f, "%lf ",
 	  s->elapsed);
 
-  for(socket=0; socket<NUM_PACKAGES; socket++){
+  for(socket=0; socket<config.sockets; socket++){
 			
     fprintf(s->f, "%lf %lf ", 
 	    s->avg_watts[socket][PKG_DOMAIN],
@@ -624,7 +639,7 @@ void print_rapl_state_header(struct rapl_state_s *s){
   //
   fprintf(s->f, "%s ",
 	  "elapsed");
-  for(socket=0; socket<NUM_PACKAGES; socket++){
+  for(socket=0; socket<config.sockets; socket++){
 
     //
     // Avg Watts

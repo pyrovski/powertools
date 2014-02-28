@@ -34,10 +34,6 @@ void usage(const char * const argv0){
 int main(int argc, char ** argv){
   struct rapl_state_s rapl_state;
 
-  int core, socket, local;
-  parse_proc_cpuinfo();
-  get_cpuid(&core, &socket, &local);
-
   char filename[256], hostname[256];
   gethostname(hostname, 256);
   FILE *f = 0;
@@ -125,6 +121,8 @@ int main(int argc, char ** argv){
   f = fopen(filename, "w");
   assert(f);
   rapl_init(&rapl_state, f, 1);
+  int core, socket, local;
+  get_cpuid(&core, &socket, &local);
 
   if((enable == 0) && 
      (PP0_Watts != 0 || PKG_Watts != 0 

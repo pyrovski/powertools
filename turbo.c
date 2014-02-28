@@ -11,7 +11,6 @@
  */
 int main(int argc, char ** argv){
   init_msr();
-  parse_proc_cpuinfo();
 
   int enable = 1;
   if(argc > 1)

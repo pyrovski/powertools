@@ -134,16 +134,16 @@ struct rapl_state_s{
 	struct timeval prev;
 	struct timeval finish;
 	double elapsed;
-	double avg_watts[NUM_PACKAGES][NUM_DOMAINS];
-	double energy_status[NUM_PACKAGES][NUM_DOMAINS];
-	struct power_limit_s power_limit[NUM_PACKAGES][NUM_DOMAINS];
-	struct power_unit_s  power_unit[NUM_PACKAGES];
-	struct power_info_s  power_info[NUM_PACKAGES][NUM_DOMAINS];
-	uint64_t last_raw_joules[NUM_PACKAGES][NUM_DOMAINS];
+	double avg_watts[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	double energy_status[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	struct power_limit_s power_limit[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	struct power_unit_s  power_unit[MAX_NUM_PACKAGES];
+	struct power_info_s  power_info[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	uint64_t last_raw_joules[MAX_NUM_PACKAGES][NUM_DOMAINS];
 	/*
-	double perf_status_start[NUM_PACKAGES][NUM_DOMAINS];
-	double perf_status_finish[NUM_PACKAGES][NUM_DOMAINS];
-	uint64_t policy[NUM_PACKAGES][NUM_DOMAINS];
+	double perf_status_start[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	double perf_status_finish[MAX_NUM_PACKAGES][NUM_DOMAINS];
+	uint64_t policy[MAX_NUM_PACKAGES][NUM_DOMAINS];
 	*/
 };
 
