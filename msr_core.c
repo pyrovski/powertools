@@ -31,10 +31,10 @@ init_msr(){
 	  /*! @todo check this msr selection; it may be incorrect on some
 	    machines, e.g. non-fio hyperion nodes
 	   */
-		snprintf(filename, 1024, "/dev/cpu/%d/msr", i*NUM_CORES_PER_PACKAGE);
+		snprintf(filename, 1024, "/dev/cpu/%d/msr_safe", i*NUM_CORES_PER_PACKAGE);
 		fd[i] = open( filename, O_RDWR );
 		if(fd[i] == -1){
-			snprintf(filename, 1024, "%s::%d  Error opening /dev/cpu/%d/msr\n", __FILE__, __LINE__, i*NUM_CORES_PER_PACKAGE);
+			snprintf(filename, 1024, "%s::%d  Error opening %s\n", __FILE__, __LINE__, filename);
 			perror(filename);
 		}
 	}
@@ -49,7 +49,7 @@ finalize_msr(){
 		if(fd[i]){
 			rc = close(fd[i]);
 			if( rc != 0 ){
-				snprintf(filename, 1024, "%s::%d  Error closing file /dev/cpu/%d/msr\n", 
+				snprintf(filename, 1024, "%s::%d  Error closing file /dev/cpu/%d/msr_safe\n", 
 						__FILE__, __LINE__, i*NUM_CORES_PER_PACKAGE);
 				perror(filename);
 			}
