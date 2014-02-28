@@ -21,7 +21,6 @@
 int msr_debug;
 static int *fd;
 
-//!@todo we also need per-core MSR files for APERF and MPERF
 void
 init_msr(){
 	parse_proc_cpuinfo();
@@ -32,7 +31,6 @@ init_msr(){
 	if( initialized ){
 		return;
 	}
-	//!@todo convert all such loops to use config info
 	for (i=0; i<config.cores; i++){
 	  /*! @todo check this msr selection; it may be incorrect on some
 	    machines, e.g. non-fio hyperion nodes

@@ -265,7 +265,6 @@ int get_cpuid(int *core, int *socket, int *local){
   if(core)
     *core = mapped_core;
 
-  //! @todo socket detection is broken?
   if(socket)
     *socket=config.map_core_to_socket[mapped_core];
   if(local)
