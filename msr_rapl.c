@@ -117,10 +117,8 @@ get_raw_power_info( int socket, int domain, uint64_t *pval ){
 
 void
 get_power_info( int socket, int domain, struct power_info_s *info, struct power_unit_s *units ){
-	int core = config.map_socket_to_core[socket][0];
-	
 	uint64_t val;
-	get_raw_power_info( core, domain, &val );
+	get_raw_power_info( socket, domain, &val );
 	info->max_time_window 		= MASK_VAL(val,53,48);
 	info->max_power	   		= MASK_VAL(val,46,32);
 	info->min_power	   		= MASK_VAL(val,30,16);

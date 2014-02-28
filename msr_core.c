@@ -23,14 +23,17 @@ static int *fd;
 
 void
 init_msr(){
-	parse_proc_cpuinfo();
-	fd = (int*)calloc(config.cores, sizeof(int));
 	int i;
 	char filename[1025];
 	static int initialized = 0;
 	if( initialized ){
+#ifdef _DEBUG
+		fprintf(stderr, "%s:%d: already initialized\n", __FILE__, __LINE__);
+#endif
 		return;
 	}
+	parse_proc_cpuinfo();
+	fd = (int*)calloc(config.cores, sizeof(int));
 	for (i=0; i<config.cores; i++){
 	  /*! @todo check this msr selection; it may be incorrect on some
 	    machines, e.g. non-fio hyperion nodes
