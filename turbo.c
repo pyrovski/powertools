@@ -25,13 +25,13 @@ int main(int argc, char ** argv){
       printf("enabling turbo on socket %d (core %d)\n", 
 	     i, config.map_socket_to_core[i][0]);
 #endif
-      enable_turbo(config.map_socket_to_core[i][0]);
+      enable_turbo(i);
     }else{
 #ifdef _DEBUG
       printf("disabling turbo on socket %d (core %d)\n", 
 	     i, config.map_socket_to_core[i][0]);
 #endif
-      disable_turbo(config.map_socket_to_core[i][0]);
+      disable_turbo(i);
     }
   }
 
