@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include "msr_core.h"
 #include "msr_rapl.h"
-#include "msr_opt.h"
 #include "blr_util.h"
 #include "cpuid.h"
 

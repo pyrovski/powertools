@@ -19,6 +19,4 @@ rapl.o: rapl.c
 	mpicc ${COMPILER_SPECIFIC_FLAGS} $(objects) -shared -Wl,-soname,librapl.so -o ../lib/librapl.so  
 
 clean:
-	rm -f *.o 
-
-
+	rm -f *.o rapl.c
