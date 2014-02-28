@@ -5,6 +5,7 @@
   MSR_IA32_APERF
 */
 
-void read_aperf_mperf(int cpu, uint64_t *aperf, uint64_t *mperf);
+//!@todo fix for per-core measurement
+void read_aperf_mperf(int socket, uint64_t *aperf, uint64_t *mperf);
 
 #endif

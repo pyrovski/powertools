@@ -19,6 +19,7 @@
 int msr_debug;
 static int fd[NUM_PACKAGES];
 
+//!@todo we also need per-core MSR files for APERF and MPERF
 void
 init_msr(){
 	int i;
