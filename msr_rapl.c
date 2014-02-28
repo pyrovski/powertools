@@ -473,6 +473,8 @@ rapl_finalize( struct rapl_state_s *s, int reset_limits){
 	fclose(s->f);
 }
 
+//!@todo benchmark this vs reading all MSRs in one trip to the kernel
+// i.e. 0x610-0x61C
 void get_all_status(int socket, struct rapl_state_s *s){
   get_energy_status( socket, PKG_DOMAIN,  
 		     &(s->energy_status[socket][PKG_DOMAIN]), 

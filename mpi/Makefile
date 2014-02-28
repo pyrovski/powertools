@@ -1,4 +1,4 @@
-all:	../lib/librapl.so
+all:	../lib/librapl.so test_rapl
 
 objects=../msr_core.o ../msr_rapl.o ../msr_turbo.o ../blr_util.o ../msr_opt.o ../cpuid.o rapl.o
 
