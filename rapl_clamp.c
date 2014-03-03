@@ -122,7 +122,7 @@ int main(int argc, char ** argv){
   assert(f);
   rapl_init(&rapl_state, f, 1);
   int core, socket, local;
-  get_cpuid(&core, &socket, &local);
+  get_cpuid(&mc_config, &mc_config_initialized, &core, &socket, &local);
 
   if((enable == 0) && 
      (PP0_Watts != 0 || PKG_Watts != 0 
@@ -151,21 +151,21 @@ int main(int argc, char ** argv){
   if(!readOnly){
     // for now, apply the same limit to all sockets
     int i;
-    for (i = 0; i < config.sockets; i++){
+    for (i = 0; i < mc_config.sockets; i++){
       if(!enable){
 #ifdef _DEBUG
 	printf("disabling rapl clamping on socket %d (core %d)\n", 
-	       i, config.map_socket_to_core[i][0]);
+	       i, mc_config.map_socket_to_core[i][0]);
 #endif
-	write_msr( config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
-	write_msr( config.map_socket_to_core[i][0], MSR_PP0_POWER_LIMIT, 0 );
+	write_msr( mc_config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
+	write_msr( mc_config.map_socket_to_core[i][0], MSR_PP0_POWER_LIMIT, 0 );
 #ifdef ARCH_062D
-	write_msr( config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
+	write_msr( mc_config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0 );
 #endif
       }else{ // enable
-	write_msr( config.map_socket_to_core[i][0], MSR_PP0_POLICY, 31); // favor cores
+	write_msr( mc_config.map_socket_to_core[i][0], MSR_PP0_POLICY, 31); // favor cores
 #ifdef ARCH_062A
-	write_msr( config.map_socket_to_core[i][0], MSR_PP1_POLICY, 0); // over GPUs?
+	write_msr( mc_config.map_socket_to_core[i][0], MSR_PP1_POLICY, 0); // over GPUs?
 #endif
 
 	if(enable && !PKG_Watts && !PP0_Watts
@@ -183,7 +183,7 @@ int main(int argc, char ** argv){
 	   ", DRAM: %f"
 #endif
 	       "\n", 
-	       i, config.map_socket_to_core[i][0],
+	       i, mc_config.map_socket_to_core[i][0],
 	       PKG_Watts, PP0_Watts
 #ifdef ARCH_062D
 	       , DRAM_Watts
@@ -224,7 +224,7 @@ int main(int argc, char ** argv){
 	    set_power_limit(i, PKG_DOMAIN, &power_limit1);
 	  }
 	} else { // !PKG_Watts && !PKG_Watts2
-	  write_msr( config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
+	  write_msr( mc_config.map_socket_to_core[i][0], MSR_PKG_POWER_LIMIT, 0 );
 	}
 	if(PP0_Watts){
 	  struct power_limit_s power_limit = {
@@ -239,7 +239,7 @@ int main(int argc, char ** argv){
 	  };
 	  set_power_limit(i, PP0_DOMAIN, &power_limit);
 	} else { // !PP0_Watts
-	  write_msr( config.map_socket_to_core[i][0], MSR_PP0_POWER_LIMIT, 0 );
+	  write_msr( mc_config.map_socket_to_core[i][0], MSR_PP0_POWER_LIMIT, 0 );
 	}
 #ifdef ARCH_062D
 	if(DRAM_Watts){
@@ -255,7 +255,7 @@ int main(int argc, char ** argv){
 	  };
 	  set_power_limit(i, DRAM_DOMAIN, &power_limit);
 	} else {
-	  write_msr(config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0);
+	  write_msr(mc_config.map_socket_to_core[i][0], MSR_DRAM_POWER_LIMIT, 0);
 	}
 #endif
       } // if(!enable) else

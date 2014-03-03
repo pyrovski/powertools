@@ -24,7 +24,7 @@ joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 void
 get_rapl_power_unit(int socket, struct power_unit_s *units){
 	uint64_t val;
-	read_msr( config.map_socket_to_core[socket][0], MSR_RAPL_POWER_UNIT, &val );
+	read_msr( mc_config.map_socket_to_core[socket][0], MSR_RAPL_POWER_UNIT, &val );
 	//p->power  = (val & MASK_RANGE( 3, 0) );	// Taken from figure 14-16,
 	//p->energy = (val & MASK_RANGE(12, 8) ); // page 14(29).
 	//p->time	  = (val & MASK_RANGE(19,16) );
@@ -57,7 +57,7 @@ domain2str( int domain ){
 
 void
 get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 	switch(domain){
 		case PKG_DOMAIN: 	read_msr( core, MSR_PKG_ENERGY_STATUS, raw_joules );	
 					break;
@@ -102,7 +102,7 @@ get_energy_status(int socket, int domain, double *joules,
 
 void
 get_raw_power_info( int socket, int domain, uint64_t *pval ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 	switch(domain){
 		case PKG_DOMAIN:	read_msr( core, MSR_PKG_POWER_INFO, pval );		
 					break;
@@ -153,7 +153,7 @@ get_power_info( int socket, int domain, struct power_info_s *info, struct power_
 
 void
 get_raw_power_limit( int socket, int domain, uint64_t *pval ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	switch(domain){
 		case PKG_DOMAIN: 	read_msr( core, MSR_PKG_POWER_LIMIT, pval );
@@ -175,7 +175,7 @@ get_raw_power_limit( int socket, int domain, uint64_t *pval ){
 
 void
 set_raw_power_limit( int socket, int domain, uint64_t val ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	switch(domain){
 		case PKG_DOMAIN: 	write_msr( core, MSR_PKG_POWER_LIMIT, val );	
@@ -346,7 +346,7 @@ get_power_limit( int socket, int domain, struct power_limit_s *limit, struct pow
 
 void
 get_raw_perf_status( int socket, int domain, uint64_t *pstatus ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	switch(domain){
 #ifdef PKG_PERF_STATUS_AVAILABLE
@@ -377,7 +377,7 @@ get_perf_status( int socket, int domain, double *pstatus, struct power_unit_s *u
 
 void
 get_raw_policy( int socket, int domain, uint64_t *ppolicy ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	switch( domain ){
 		case PP0_DOMAIN:	read_msr( core, MSR_PP0_POLICY, ppolicy );	
@@ -393,7 +393,7 @@ get_raw_policy( int socket, int domain, uint64_t *ppolicy ){
 
 void
 set_raw_policy( int socket, int domain, uint64_t policy ){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	switch( domain ){
 		case PP0_DOMAIN:	write_msr( core, MSR_PP0_POLICY, policy );	
@@ -432,7 +432,7 @@ rapl_init(struct rapl_state_s *s, FILE *f, int print_header){
 	if(print_header)
 	  print_rapl_state_header(s);
 
-	for(socket=0; socket<config.sockets; socket++){
+	for(socket=0; socket<mc_config.sockets; socket++){
 		get_rapl_power_unit( socket, &(s->power_unit[socket]) );
 		get_power_info(    socket, PKG_DOMAIN,  &(s->power_info[socket][PKG_DOMAIN]),          &(s->power_unit[socket]) );
 #ifdef ARCH_062D
@@ -466,9 +466,9 @@ rapl_finalize( struct rapl_state_s *s, int reset_limits){
 	int socket;
 	gettimeofday( &(s->finish), NULL );
 	s->elapsed = ts_delta( &(s->prev), &(s->finish) );
-	for(socket=0; socket<config.sockets; socket++){
+	for(socket=0; socket<mc_config.sockets; socket++){
 		get_all_status(socket, s);
-		int core = config.map_socket_to_core[socket][0];
+		int core = mc_config.map_socket_to_core[socket][0];
 
 		if(reset_limits){
 		  // Rest all limits.
@@ -542,7 +542,7 @@ void print_rapl_state(struct rapl_state_s *s){
   fprintf(s->f, "%lf ",
 	  s->elapsed);
 
-  for(socket=0; socket<config.sockets; socket++){
+  for(socket=0; socket<mc_config.sockets; socket++){
 			
     fprintf(s->f, "%lf %lf ", 
 	    s->avg_watts[socket][PKG_DOMAIN],
@@ -637,7 +637,7 @@ void print_rapl_state_header(struct rapl_state_s *s){
   //
   fprintf(s->f, "%s ",
 	  "elapsed");
-  for(socket=0; socket<config.sockets; socket++){
+  for(socket=0; socket<mc_config.sockets; socket++){
 
     //
     // Avg Watts

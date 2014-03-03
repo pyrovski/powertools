@@ -25,7 +25,7 @@ static int msr_rank_mod=1;
 		f = safe_mkstemp(hostname, "rapl", rank);
 		init_msr();
 		int socket;
-		for(socket = 0; socket < config.sockets; socket++)
+		for(socket = 0; socket < mc_config.sockets; socket++)
 		  disable_turbo(socket);
 		rapl_init(&s, f ,1);
 	}

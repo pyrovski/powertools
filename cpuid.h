@@ -5,7 +5,7 @@
   and apic ids range from 0 to 53.
   Thus, some array maps must be longer than the number of cores.
  */
-typedef struct mcsup_nodeconfig_d 
+typedef struct 
 {
   int sockets;
   int cores;
@@ -20,7 +20,9 @@ typedef struct mcsup_nodeconfig_d
 } mcsup_nodeconfig_t;
 
 extern mcsup_nodeconfig_t config;
+extern int config_initialized;
 
-int get_cpuid(int *core, int *socket, int *local);
-int parse_proc_cpuinfo();
+int get_cpuid(mcsup_nodeconfig_t *config, int *config_initialized, 
+							int *core, int *socket, int *local);
+int parse_proc_cpuinfo(mcsup_nodeconfig_t *config, int *config_initialized);
 #endif

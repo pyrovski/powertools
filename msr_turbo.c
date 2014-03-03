@@ -17,7 +17,7 @@
 
 void
 enable_turbo(int socket){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	uint64_t val;
 	/*
@@ -36,7 +36,7 @@ enable_turbo(int socket){
 
 void
 disable_turbo(int socket){
-	int core = config.map_socket_to_core[socket][0];
+	int core = mc_config.map_socket_to_core[socket][0];
 
 	uint64_t val;
 	/*

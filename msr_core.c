@@ -19,6 +19,9 @@
 #include "cpuid.h"
 
 int msr_debug;
+mcsup_nodeconfig_t mc_config;
+int mc_config_initialized = 0;
+
 static int *fd;
 
 void
@@ -32,9 +35,9 @@ init_msr(){
 #endif
 		return;
 	}
-	parse_proc_cpuinfo();
-	fd = (int*)calloc(config.cores, sizeof(int));
-	for (i=0; i<config.cores; i++){
+	parse_proc_cpuinfo(&mc_config, &mc_config_initialized);
+	fd = (int*)calloc(mc_config.cores, sizeof(int));
+	for (i=0; i<mc_config.cores; i++){
 	  /*! @todo check this msr selection; it may be incorrect on some
 	    machines, e.g. non-fio hyperion nodes
 	   */
@@ -52,7 +55,7 @@ void
 finalize_msr(){
 	int i, rc;
 	char filename[1025];
-	for( i=0; i<config.cores; i++){
+	for( i=0; i<mc_config.cores; i++){
 		if(fd[i]){
 			rc = close(fd[i]);
 			if( rc != 0 ){

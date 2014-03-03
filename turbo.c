@@ -17,17 +17,17 @@ int main(int argc, char ** argv){
     enable = 0;
 
   int i;
-  for (i = 0; i < config.sockets; i++){
+  for (i = 0; i < mc_config.sockets; i++){
     if(enable){
 #ifdef _DEBUG
       printf("enabling turbo on socket %d (core %d)\n", 
-	     i, config.map_socket_to_core[i][0]);
+	     i, mc_config.map_socket_to_core[i][0]);
 #endif
       enable_turbo(i);
     }else{
 #ifdef _DEBUG
       printf("disabling turbo on socket %d (core %d)\n", 
-	     i, config.map_socket_to_core[i][0]);
+	     i, mc_config.map_socket_to_core[i][0]);
 #endif
       disable_turbo(i);
     }

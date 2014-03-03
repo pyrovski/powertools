@@ -16,12 +16,6 @@
 #include "msr_rapl.h"
 #include "msr_pebs.h"
 uint64_t global_test;
-/*
-static void
-spin(uint64_t i){
-	for(global_test=0; global_test<i; global_test++);
-}
-*/
 
 double measure_tsc(){
   struct timeval t1, t2;

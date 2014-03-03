@@ -2,12 +2,17 @@
 #define MSR_CORE_H
 #include <stdint.h>
 #include <sys/types.h>	// off_t
+#include "cpuid.h"
 #define MAX_NUM_PACKAGES 4
 enum{
 	MSR_AND,
 	MSR_OR,
 	MSR_XOR
 };
+
+extern mcsup_nodeconfig_t mc_config;
+extern int mc_config_initialized;
+
 void init_msr();
 void finalize_msr();
 void write_msr(int core, off_t msr, uint64_t val);
