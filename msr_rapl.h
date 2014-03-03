@@ -193,5 +193,3 @@ void set_policy( int socket, int domain, uint64_t policy );
 double joules2watts( double joules, struct timeval *start, struct timeval *stop );
 
 #endif //MSR_RAPL_H
-
-

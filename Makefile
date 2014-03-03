@@ -38,7 +38,7 @@ $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
 	$(CC) -fPIC -Wall ${DEFINES} -o $(target) $^ -lrt
 
 install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_common.h turbo rapl_clamp plot.R parse_rapl.sh msr_clocksh
-	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h\
+	install -m 0644 -t $(HOME)/local/include/ msr_rapl.h msr_core.h msr_common.h\
  blr_util.h msr_common.h msr_clocks.h
 	install -m 0644 -t $(HOME)/local/lib/ $(library)
 	install -m 0744 -t $(HOME)/local/bin/ turbo rapl_clamp $(target) plot.R parse_rapl.sh
