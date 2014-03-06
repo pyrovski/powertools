@@ -187,9 +187,15 @@ void set_policy( int socket, int domain, uint64_t policy );
 
 #endif //ARCH_SANDY_BRIDGE
 
+static inline double
+joules2watts( double joules, struct timeval *start, struct timeval *stop ){
 
-
-
-double joules2watts( double joules, struct timeval *start, struct timeval *stop );
+	return joules/
+		(
+			(stop->tv_usec - start->tv_usec)/(double)1000000.0
+			+
+			stop->tv_sec   - start->tv_sec
+		);
+}
 
 #endif //MSR_RAPL_H
