@@ -171,6 +171,7 @@ void get_policy( 		int socket, int domain, 	uint64_t *ppolicy 					 );
 void get_rapl_power_unit(	int socket, 		struct power_unit_s *p				         );
 
 void get_all_status(int socket, struct rapl_state_s *s);
+void get_all_energy_status(int socket, struct rapl_state_s *s);
 
 // print
 void print_rapl_state(struct rapl_state_s *s);

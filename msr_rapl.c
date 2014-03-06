@@ -537,6 +537,24 @@ void get_all_status(int socket, struct rapl_state_s *s){
 #endif
 }
 
+void get_all_energy_status(int socket, struct rapl_state_s *s){
+	assert(socket >= 0);
+	assert(s);
+  get_energy_status( socket, PKG_DOMAIN,  
+		     &(s->energy_status[socket][PKG_DOMAIN]), 
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][PKG_DOMAIN]);
+  get_energy_status( socket, PP0_DOMAIN,  
+		     &(s->energy_status[socket][PP0_DOMAIN]), 
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][PP0_DOMAIN]);
+#ifdef ARCH_062D
+  get_energy_status( socket, DRAM_DOMAIN, 
+		     &(s->energy_status[socket][DRAM_DOMAIN]), 
+		     &(s->power_unit[socket]),
+		     &s->last_raw_joules[socket][DRAM_DOMAIN]);
+#endif
+}
 
 void print_rapl_state(struct rapl_state_s *s){
   
