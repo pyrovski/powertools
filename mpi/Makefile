@@ -1,3 +1,5 @@
+CC=mpicc
+
 ifneq ($(dbg),)
 DEFINES +=-D_DEBUG=$(dbg) -g -pg
 else

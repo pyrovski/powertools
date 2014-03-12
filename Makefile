@@ -13,7 +13,7 @@ DEFINES +=-O2 -DNDEBUG
 endif
 
 CFLAGS=-fPIC -Wall ${DEFINES} ${COMPILER_SPECIFIC_FLAGS}
-CC=mpicc
+CC=gcc
 
 .PHONY: mpi
 
