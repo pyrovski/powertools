@@ -163,6 +163,11 @@ void get_raw_power_limit(       int socket, int domain, uint64_t *pval      );
 
 void get_energy_status(int socket, int domain, double *joules, 
 		       struct power_unit_s *units, uint64_t *last_raw_joules);
+double 
+get_energy_status2(int socket, int domain, 
+									 struct power_unit_s *units, 
+									 const uint64_t *last_raw_joules,
+									 uint64_t *current_raw_joules);
 void get_power_limit( 		int socket, int domain, 	struct power_limit_s *limit, 	struct power_unit_s *units);
 void get_power_info(		int socket, int domain, 	struct power_info_s *info, 	struct power_unit_s *units);
 void get_perf_status(		int socket, int domain, 	double *pstatus_sec, 		struct power_unit_s *units);	

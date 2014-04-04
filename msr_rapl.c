@@ -93,6 +93,33 @@ get_energy_status(int socket, int domain, double *joules,
 	}
 }
 
+double 
+get_energy_status2(int socket, int domain, 
+									 struct power_unit_s *units, 
+									 const uint64_t *last_raw_joules,
+									 uint64_t *current_raw_joules){
+	uint64_t delta_joules;
+	double joules;
+	assert(socket >= 0);
+	assert(current_raw_joules);
+	assert(units);
+	get_raw_energy_status( socket, domain, current_raw_joules );
+	if(last_raw_joules){
+		//!@todo FIXME:  This will give a wrong answer if we've wrapped around multiple times.
+		if( *current_raw_joules < *last_raw_joules){
+			*current_raw_joules += 0x100000000;
+		}
+		delta_joules = *current_raw_joules - *last_raw_joules;
+		joules = UNIT_SCALE(delta_joules, units->energy);
+		if(msr_debug)
+			fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
+							__FILE__, __LINE__, domain2str(domain), joules);
+	} else
+		joules = 0;
+	return joules;
+}
+
+
 void
 get_raw_power_info( int socket, int domain, uint64_t *pval ){
 	assert(socket >= 0);
