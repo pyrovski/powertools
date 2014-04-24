@@ -30,11 +30,6 @@ void rapl_poll(const char * const filename, int log){
   uint64_t tsc, lastNonzero;
   double time = 0;
 
-
-#ifdef ARCH_062D
-  int i;
-#endif
-
   double tsc_rate;
   FILE *rateFile = fopen("/tmp/tsc_rate", "r");
   //! @todo measure/read tsc rate

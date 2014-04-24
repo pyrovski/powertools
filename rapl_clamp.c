@@ -11,30 +11,34 @@
 #include "msr_core.h"
 #include "cpuid.h"
 #include "msr_common.h"
+#include "sample.h"
 
-//#define _DEBUG
-
+int sampling = 0;
 
 void usage(const char * const argv0){
   fprintf(stderr, 
-	  "Usage: %s [-e for enable] [-d for disable] [-P <package watt limit>] "
+					"Usage: %s [-e for enable] [-d for disable] [-P <package watt limit>] "
 #ifdef ARCH_062D
-	  "[-D <DRAM watt limit>] "
+					"[-D <DRAM watt limit>] "
 #endif
-	  "[--P2 <2nd PKG watt limit>] "
-	  "[--w2 <2nd PKG timing window>] "
-	  "[-0 <PP0 watt limit>] "
-	  "[-w <raw window value (int)>] "
-	  "[-r to read values only (/tmp/rapl_clamp by default)] "
-	  "[-o <summary output>]\n"
-	  "Limits will be applied to all sockets.\n", 
-	  argv0);
+					"[--P2 <2nd PKG watt limit>] "
+					"[--w2 <2nd PKG timing window>] "
+					"[-0 <PP0 watt limit>] "
+					"[-w <raw window value (int)>] "
+					"[-r to read values only (/tmp/rapl_clamp by default)] "
+					"[-o <summary output>] "
+					"[-s [<sample interval in seconds>](default 1ms)]\n"
+					"Limits will be applied to all sockets.\n", 
+					argv0);
 }
+
+#define dlog(str) printf(str)
 
 int main(int argc, char ** argv){
   struct rapl_state_s rapl_state;
 
-  char filename[256], hostname[256];
+  char filename[256], hostname[256], 
+		sampleFilename[256] = "sample.dat";
   gethostname(hostname, 256);
   FILE *f = 0;
   snprintf(filename, 256, "rapl_clamp_%s", hostname);
@@ -49,6 +53,7 @@ int main(int argc, char ** argv){
 #endif
   int windowSize = 0;
   int window2Size = 0;
+	double samplingInterval = .001;
 
   int w2Flag = 0;
   int p2Flag = 0;
@@ -64,7 +69,7 @@ int main(int argc, char ** argv){
     @todo to run within rapl_clamp, use getopt "+" to supply args to execvp()
    */
   while((opt = getopt_long(argc, argv, 
-			   "+edr0:P:w:o:"
+			   "+hedr0:P:w:o:s::S:"
 			   #ifdef ARCH_062D
 			   "D:"
 			   #endif
@@ -84,6 +89,10 @@ int main(int argc, char ** argv){
 	exit(1);
       }
       break;
+		case 'h':
+			usage(argv[0]);
+			return 0;
+			break;
     case 'e':
       enableSupplied = 1;
       break;
@@ -110,7 +119,18 @@ int main(int argc, char ** argv){
 #endif
     case 'o':
       strncpy(filename, optarg, 256);
+			filename[255] = 0;
       break;
+		case 's':
+			sampling = 1;
+			if(optarg){
+				samplingInterval = strtod(optarg, 0);
+			}
+			break;
+		case 'S':
+			strncpy(sampleFilename, optarg, 256);
+			sampleFilename[255] = 0;
+			break;
     default:
       usage(argv[0]);
       exit(1);
@@ -174,7 +194,8 @@ int main(int argc, char ** argv){
 #endif
 	   ){
 	  fprintf(stderr, "no limits supplied\n");
-	  exit(1);
+		usage(argv[0]);
+		exit(1);
 	}
 	// 
 #ifdef _DEBUG
@@ -265,23 +286,33 @@ int main(int argc, char ** argv){
   if(optind < argc){
     int status;
     pid_t pid;
+		if(sampling)
+			installSampleHandler(&sampling);
     pid = fork();
-    if(!pid){
+    if(!pid){ // child
+			printf("launching");
+			int i;
+			for(i = optind; i < argc; i++)
+				printf(" %s", argv[i]);
+			printf("\n");
       status = execvp(argv[optind], argv + optind);
       if(status){
-	// complain
-	perror("execvp failed");
-	return -1;
+				// complain
+				perror("execvp failed");
+				return -1;
       }
     } else if(pid == -1){
-	perror("fork failed");
-	return -1;
-    } else {
-      
-      // wait for program to quit
-      wait(&status);
+			perror("fork failed");
+			return -1;
+    } else { // parent
+			if(sampling){
+				msSample(sampleFilename, 1, samplingInterval);
+			} else { // wait for program to quit
+				wait(&status);
+			}
     }
   }
+	
 
   // don't reset MSRs on exit
   rapl_finalize(&rapl_state, 0);

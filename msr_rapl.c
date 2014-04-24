@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "msr_common.h"
 #include "msr_core.h"
 #include "msr_rapl.h"
@@ -32,16 +33,17 @@ get_rapl_power_unit(int socket, struct power_unit_s *units){
 static const char *
 domain2str( int domain ){
 	switch(domain){
-		case PKG_DOMAIN:	return "PKG";	break;
-		case PP0_DOMAIN:	return "PP0";	break;
+	case PKG_DOMAIN:	return "PKG";	break;
+	case PP0_DOMAIN:	return "PP0";	break;
 #ifdef ARCH_062A
-		case PP1_DOMAIN:	return "PP1";	break;
+	case PP1_DOMAIN:	return "PP1";	break;
 #endif
 #ifdef ARCH_062D
-		case DRAM_DOMAIN:	return "DRAM";	break;
+	case DRAM_DOMAIN:	return "DRAM";	break;
 #endif
-		default: 		assert(0);	break;
+	default: 		exit(1);	break;
 	}
+	return "error";
 }
 
 void
@@ -464,15 +466,20 @@ rapl_init(struct rapl_state_s *s, FILE *f, int print_header){
 
 	for(socket=0; socket<mc_config.sockets; socket++){
 		get_rapl_power_unit( socket, &(s->power_unit[socket]) );
-		get_power_info(    socket, PKG_DOMAIN,  &(s->power_info[socket][PKG_DOMAIN]),          &(s->power_unit[socket]) );
+		get_power_info(    socket, PKG_DOMAIN,  &(s->power_info[socket][PKG_DOMAIN]),
+											 &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_info(    socket, DRAM_DOMAIN, &(s->power_info[socket][DRAM_DOMAIN]),         &(s->power_unit[socket]) );
+		get_power_info(    socket, DRAM_DOMAIN, &(s->power_info[socket][DRAM_DOMAIN]),
+											 &(s->power_unit[socket]) );
 #endif
 
-		get_power_limit(   socket, PKG_DOMAIN,  &(s->power_limit[socket][PKG_DOMAIN]),         &(s->power_unit[socket]) );
-		get_power_limit(   socket, PP0_DOMAIN,  &(s->power_limit[socket][PP0_DOMAIN]),         &(s->power_unit[socket]) );
+		get_power_limit(   socket, PKG_DOMAIN,  &(s->power_limit[socket][PKG_DOMAIN]), 
+											 &(s->power_unit[socket]) );
+		get_power_limit(   socket, PP0_DOMAIN,  &(s->power_limit[socket][PP0_DOMAIN]), 
+											 &(s->power_unit[socket]) );
 #ifdef ARCH_062D
-		get_power_limit(   socket, DRAM_DOMAIN, &(s->power_limit[socket][DRAM_DOMAIN]),        &(s->power_unit[socket]) );
+		get_power_limit(   socket, DRAM_DOMAIN, &(s->power_limit[socket][DRAM_DOMAIN]), 
+											 &(s->power_unit[socket]) );
 #endif
 
 		get_energy_status( socket, PKG_DOMAIN,  NULL, 

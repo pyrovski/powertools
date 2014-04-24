@@ -37,7 +37,7 @@ sample.o:     Makefile sample.c
 
 $(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
  blr_util.o cpuid.o rapl_poll.o sample.o
-	$(CC) -fPIC -Wall ${DEFINES} -o $(target) $^ -lrt
+	$(CC) -fPIC -Wall ${DEFINES} -o $(target) $^ -lrt -lm
 
 install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_common.h turbo rapl_clamp plot.R parse_rapl.sh msr_clocks.h
 	mkdir -p $(INSTALL_DEST)/include $(INSTALL_DEST)/lib $(INSTALL_DEST)/bin
@@ -49,11 +49,11 @@ install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_common.h turb
 $(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_clocks.o
 	$(CC) -shared -Wl,-soname,$(library) -o $(library) $^
 
-turbo: turbo.c cpuid.c msr_turbo.c msr_core.c
+turbo: turbo.o cpuid.o msr_turbo.o msr_core.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-rapl_clamp: rapl_clamp.c msr_core.c cpuid.c msr_rapl.c blr_util.c
-	$(CC) $(CFLAGS) -o $@ $^
+rapl_clamp: rapl_clamp.o msr_core.o cpuid.o msr_rapl.o blr_util.o sample.o
+	$(CC) $(CFLAGS) -o $@ $^ -lrt -lm
 
 clean:
 	rm -f *.o $(target) $(library) turbo rapl_clamp

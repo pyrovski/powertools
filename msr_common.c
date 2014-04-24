@@ -10,22 +10,13 @@
 #include <stdlib.h>
 #include "msr_common.h"
 #include "blr_util.h"
+#include "sample.h"
 
 #ifdef TEST_HARNESS
 #include "msr_core.h"
 #include "msr_rapl.h"
 #include "msr_pebs.h"
 uint64_t global_test;
-
-double measure_tsc(){
-  struct timeval t1, t2;
-  gettimeofday(&t1, 0);
-  uint64_t tsc1 = rdtsc();
-  sleep(1);
-  gettimeofday(&t2, 0);
-  uint64_t tsc2 = rdtsc();
-  return (tsc1 < tsc2 ? (tsc2 - tsc1) : (tsc1 - tsc2)) / ts_delta(&t1, &t2);
-}
 
 static void
 test_power_meters(){
@@ -109,7 +100,6 @@ test_pebs(){
 }
 
 extern void rapl_poll(const char * const filename, int log);
-extern void msSample(const char * const filename, int log);
 
 void usage(const char *name){
   printf("%s [-p <poll output>] [-s <sample output>]"
@@ -129,7 +119,7 @@ main(int argc, char **argv){
 	    return 0;
 	    break;
 	  case 's':
-	    msSample(optarg, 1);
+	    msSample(optarg, 1, .001);
 	    return 0;
 	    break;
 	  case 'm':
