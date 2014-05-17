@@ -309,7 +309,12 @@ int main(int argc, char ** argv){
 			return -1;
     } else { // parent
 			if(sampling){
-				msSample(sampleFilename, 1, samplingInterval);
+				if(!mc_config_initialized){
+					fprintf(stderr, "mc_config_initialized not initialized yet\n");
+					parse_proc_cpuinfo(&mc_config, &mc_config_initialized);
+				}
+				msSample(sampleFilename, 1, samplingInterval, mc_config.sockets, 
+								 &rapl_state);
 			} else { // wait for program to quit
 				wait(&status);
 			}
