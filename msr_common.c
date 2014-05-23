@@ -15,7 +15,6 @@
 #ifdef TEST_HARNESS
 #include "msr_core.h"
 #include "msr_rapl.h"
-#include "msr_pebs.h"
 uint64_t global_test;
 
 static void
@@ -83,22 +82,6 @@ test_power_meters(){
 	return;
 }
 
-static void
-test_pebs(){
-	uint64_t counter[4], reset[4];
-	counter[0] = MEM_LOAD_RETIRED__L2_LINE_MISS;
-	counter[1] = UNUSED_COUNTER;
-	counter[2] = UNUSED_COUNTER;
-	counter[3] = UNUSED_COUNTER;
-	reset[0] = 100;
-	reset[1] = 0;
-	reset[2] = 0;
-	reset[3] = 0;
-	pebs_init( 10, counter, reset );
-	dump_pebs();
-	return;
-}
-
 extern void rapl_poll(const char * const filename, int log);
 
 void usage(const char *name){
@@ -112,7 +95,7 @@ main(int argc, char **argv){
 	init_msr();
 
 	int status;
-	while((status = getopt(argc, argv, "p:s:mb")) != -1){
+	while((status = getopt(argc, argv, "p:s:m")) != -1){
 	  switch(status){
 	  case 'p':
 	    rapl_poll(optarg, 1);
@@ -124,10 +107,6 @@ main(int argc, char **argv){
 	    break;
 	  case 'm':
 	    test_power_meters();
-	    return 0;
-	    break;
-	  case 'b':
-	    test_pebs();
 	    return 0;
 	    break;
 	  default:

@@ -35,7 +35,7 @@ cpuid.o:      Makefile cpuid.h
 rapl_poll.o:  Makefile rapl_poll.c
 sample.o:     Makefile sample.c
 
-$(target): msr_rapl.o msr_core.o msr_common.o msr_pebs.o blr_util.o msr_turbo.o\
+$(target): msr_rapl.o msr_core.o msr_common.o blr_util.o msr_turbo.o\
  blr_util.o cpuid.o rapl_poll.o sample.o
 	$(CC) -fPIC -Wall ${DEFINES} -o $(target) $^ -lrt -lm
 
@@ -46,7 +46,7 @@ install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_common.h turb
 	install -m 0644 -t $(INSTALL_DEST)/lib/ $(library)
 	install -m 0744 -t $(INSTALL_DEST)/bin/ turbo rapl_clamp $(target) plot.R parse_rapl.sh
 
-$(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_pebs.o msr_clocks.o
+$(library): msr_rapl.o blr_util.o msr_core.o msr_turbo.o msr_clocks.o
 	$(CC) -shared -Wl,-soname,$(library) -o $(library) $^
 
 turbo: turbo.o cpuid.o msr_turbo.o msr_core.o
