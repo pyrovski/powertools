@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 2; c-basic-offset: 2 -*- */
 /* msr_core.c
  *
  * Low-level msr interface.
@@ -44,8 +45,10 @@ init_msr(){
 		snprintf(filename, 1024, "/dev/cpu/%d/msr_safe", i);
 		fd[i] = open( filename, O_RDWR );
 		if(fd[i] == -1){
-			snprintf(filename, 1024, "%s::%d  Error opening %s\n", __FILE__, __LINE__, filename);
-			perror(filename);
+			char errMsg[1024];
+			snprintf(errMsg, 1024, "%s::%d  Error opening %s\n", __FILE__, __LINE__, filename);
+			errMsg[1023] = 0;
+			perror(errMsg);
 		}
 	}
 	initialized = 1;
