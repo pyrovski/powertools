@@ -94,6 +94,9 @@ main(int argc, char **argv){
 	msr_debug=1;
 	init_msr();
 
+	struct rapl_state_s rapl_state;
+  rapl_init(&rapl_state, 0, 0);
+
 	int status;
 	while((status = getopt(argc, argv, "p:s:m")) != -1){
 	  switch(status){
@@ -102,7 +105,7 @@ main(int argc, char **argv){
 	    return 0;
 	    break;
 	  case 's':
-	    msSample(optarg, 1, .001);
+	    msSample(optarg, 1, .001, 1, &rapl_state);
 	    return 0;
 	    break;
 	  case 'm':
