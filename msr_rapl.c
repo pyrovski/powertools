@@ -811,4 +811,17 @@ void print_rapl_state_header(struct rapl_state_s *s){
   //
   fprintf(s->f, "\n");
 }
+
+void syncRAPL(int socket){
+  uint64_t last_raw_joules[NUM_DOMAINS], last_raw_joules_tmp[NUM_DOMAINS];
+  get_raw_energy_status(0, PKG_DOMAIN, &last_raw_joules[PKG_DOMAIN]);
+  get_raw_energy_status(0, PKG_DOMAIN, &last_raw_joules_tmp[PKG_DOMAIN]);
+
+  // synchronize with an update
+  while(last_raw_joules[PKG_DOMAIN] == last_raw_joules_tmp[PKG_DOMAIN]){
+    usleep(10);
+    get_raw_energy_status(0, PKG_DOMAIN, &last_raw_joules_tmp[PKG_DOMAIN]);
+  }
+}
+
 #endif //ARCH_SANDY_BRIDGE
