@@ -24,20 +24,14 @@ test_power_meters(){
 	double joules[NUM_DOMAINS]; 
 	uint64_t last_raw_joules[NUM_DOMAINS];
 	struct timeval now;
-#ifdef ARCH_062D
 	int i;
-#endif
 	msr_debug=1;
 	get_rapl_power_unit(0, &units);
 
+	for(i = 0; i < NUM_DOMAINS; i++)
+		get_raw_energy_status( 0, i, last_raw_joules+i );
 #ifdef ARCH_062A
 	get_power_info(0, PKG_DOMAIN, &info[PKG_DOMAIN],&units);
-	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units, 
-			  &last_raw_joules[PKG_DOMAIN]);
-	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
-			  &last_raw_joules[PP0_DOMAIN]);
-	get_energy_status(0, PP1_DOMAIN, &joules[PP1_DOMAIN], &units,
-			  &last_raw_joules[PP1_DOMAIN]);
 	while(1){
 		gettimeofday(&now, NULL);
 		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
@@ -57,19 +51,13 @@ test_power_meters(){
 	msr_debug=1;
 	get_power_info(0, PKG_DOMAIN, 	&info[PKG_DOMAIN], 	&units);
 	get_power_info(0, DRAM_DOMAIN, 	&info[DRAM_DOMAIN],	&units);
-	msr_debug=0;
-	get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
-			  &last_raw_joules[PKG_DOMAIN]);
-	get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
-			  &last_raw_joules[PP0_DOMAIN]);
-	get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
-			  &last_raw_joules[DRAM_DOMAIN]);
+	msr_debug=1;
 	for(i=0; i<100; i++){
 		gettimeofday(&now, NULL);
 		get_energy_status(0, PKG_DOMAIN, &joules[PKG_DOMAIN], &units,
-				  &last_raw_joules[DRAM_DOMAIN]);
+				  &last_raw_joules[PKG_DOMAIN]);
 		get_energy_status(0, PP0_DOMAIN, &joules[PP0_DOMAIN], &units,
-			  &last_raw_joules[DRAM_DOMAIN]);
+			  &last_raw_joules[PP0_DOMAIN]);
 		get_energy_status(0, DRAM_DOMAIN, &joules[DRAM_DOMAIN], &units,
 			  &last_raw_joules[DRAM_DOMAIN]);
 		fprintf(stderr, "timestamp= %0ld.%.6ld  pkg_J= %15.10lf  pp0_J= %15.10lf  dram_J= %15.10lf\n", 
