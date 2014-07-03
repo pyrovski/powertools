@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 2; c-basic-offset: 2 -*- */
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
