@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 2; c-basic-offset: 2 -*- */
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
