@@ -42,7 +42,7 @@ $(target): msr_rapl.o msr_core.o msr_common.o blr_util.o msr_turbo.o\
 install: $(library) $(target) msr_rapl.h msr_core.h blr_util.h msr_common.h turbo rapl_clamp plot.R parse_rapl.sh msr_clocks.h
 	mkdir -p $(INSTALL_DEST)/include $(INSTALL_DEST)/lib $(INSTALL_DEST)/bin
 	install -m 0644 -t $(INSTALL_DEST)/include/ msr_rapl.h msr_core.h\
- blr_util.h msr_common.h msr_clocks.h
+ blr_util.h msr_common.h msr_clocks.h msr_turbo.h
 	install -m 0644 -t $(INSTALL_DEST)/lib/ $(library)
 	install -m 0744 -t $(INSTALL_DEST)/bin/ turbo rapl_clamp $(target) plot.R parse_rapl.sh
 
