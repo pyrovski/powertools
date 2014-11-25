@@ -1,6 +1,9 @@
 #include <unistd.h>
 #include <mpi.h>
 
+mcsup_nodeconfig_t mc_config;
+int mc_config_initialized = 0;
+
 int
 main(int argc, char **argv){
 	int rank, size;

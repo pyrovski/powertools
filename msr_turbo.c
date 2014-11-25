@@ -17,6 +17,8 @@
 
 void
 enable_turbo(int socket){
+	if(!mc_config_initialized)
+		parse_proc_cpuinfo(&mc_config, &mc_config_initialized);
 	int core = mc_config.map_socket_to_core[socket][0];
 
 	uint64_t val;
@@ -36,6 +38,8 @@ enable_turbo(int socket){
 
 void
 disable_turbo(int socket){
+	if(!mc_config_initialized)
+		parse_proc_cpuinfo(&mc_config, &mc_config_initialized);
 	int core = mc_config.map_socket_to_core[socket][0];
 
 	uint64_t val;

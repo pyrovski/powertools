@@ -20,8 +20,8 @@
 #include "cpuid.h"
 
 int msr_debug;
-mcsup_nodeconfig_t mc_config;
-int mc_config_initialized = 0;
+//mcsup_nodeconfig_t mc_config;
+//int mc_config_initialized = 0;
 
 static int *fd;
 

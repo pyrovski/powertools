@@ -6,6 +6,8 @@
 
 //#define _DEBUG
 
+mcsup_nodeconfig_t mc_config;
+int mc_config_initialized = 0;
 /*!
   enable/disable turbo for all cores
  */

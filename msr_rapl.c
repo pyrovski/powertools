@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "msr_common.h"
 #include "msr_core.h"
 #include "msr_rapl.h"
@@ -67,6 +68,10 @@ get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
 		default: 		assert(0);						
 					break;
 	}
+	/* if(!*raw_joules){ */
+	/* 	fprintf(stderr, "!!! socket %d domain %d: expected nonzero!\n", */
+	/* 		socket, domain); */
+	/* } */
 	if(msr_debug){
 		fprintf(stderr, "%s::%d  raw joules (%s) = %lu\n", 
 			__FILE__, __LINE__, domain2str(domain), *raw_joules);
@@ -83,6 +88,9 @@ get_energy_status(int socket, int domain, double *joules,
 	get_raw_energy_status( socket, domain, &current_joules );
 	//!@todo FIXME:  This will give a wrong answer if we've wrapped around multiple times.
 	if( current_joules < *last_raw_joules){
+		/* if(!domain) */
+		/* 	fprintf(stderr, "!!! RAPL overflow on socket %d domain %d: prev: %"PRId64", cur: %"PRId64"\n", */
+		/* 		socket, domain, *last_raw_joules, current_joules); */
 		current_joules += 0x100000000;
 	}
 	delta_joules = current_joules - *last_raw_joules;
@@ -110,6 +118,9 @@ get_energy_status2(int socket, int domain,
 	if(last_raw_joules){
 		//!@todo FIXME:  This will give a wrong answer if we've wrapped around multiple times.
 		if( *current_raw_joules < *last_raw_joules){
+			if(!domain)
+				fprintf(stderr, "!!! RAPL overflow on socket %d domain %d: prev: %"PRId64", cur: %"PRId64"\n",
+								socket, domain, *last_raw_joules, current_raw_joules);
 			*current_raw_joules += 0x100000000;
 		}
 		delta_joules = *current_raw_joules - *last_raw_joules;

@@ -15,6 +15,8 @@
 #include "sample.h"
 
 int sampling = 0;
+mcsup_nodeconfig_t mc_config;
+int mc_config_initialized = 0;
 
 void usage(const char * const argv0){
   fprintf(stderr, 

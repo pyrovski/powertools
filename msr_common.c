@@ -17,6 +17,9 @@
 #include "msr_rapl.h"
 uint64_t global_test;
 
+mcsup_nodeconfig_t mc_config;
+int mc_config_initialized = 0;
+
 static void
 test_power_meters(){
 	struct power_unit_s units;
