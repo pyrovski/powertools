@@ -1,0 +1,3 @@
+Warning: you must create localConfig.d/localConfig. This file should
+add flags to DEFINES and CFLAGS for your target machine. E.g.: DEFINES
++=-DARCH_062D.
