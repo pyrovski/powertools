@@ -94,6 +94,10 @@ get_energy_status(int socket, int domain, double *joules,
 		current_joules += 0x100000000;
 	}
 	delta_joules = current_joules - *last_raw_joules;
+#ifdef _DEBUG
+	fprintf(stderr, "last: %llu, current: %llu\n", 
+					*last_raw_joules, current_joules);
+#endif
 	*last_raw_joules = current_joules;
 	if(joules != NULL){
 		*joules = UNIT_SCALE(delta_joules, units->energy);
@@ -118,16 +122,20 @@ get_energy_status2(int socket, int domain,
 	if(last_raw_joules){
 		//!@todo FIXME:  This will give a wrong answer if we've wrapped around multiple times.
 		if( *current_raw_joules < *last_raw_joules){
-			if(!domain)
-				fprintf(stderr, "!!! RAPL overflow on socket %d domain %d: prev: %"PRId64", cur: %"PRId64"\n",
-								socket, domain, *last_raw_joules, current_raw_joules);
+			/* if(!domain) */
+			/* 	fprintf(stderr, "!!! RAPL overflow on socket %d domain %d: prev: %"PRId64", cur: %"PRId64"\n", */
+			/* 					socket, domain, *last_raw_joules, current_raw_joules); */
 			*current_raw_joules += 0x100000000;
 		}
 		delta_joules = *current_raw_joules - *last_raw_joules;
+#ifdef _DEBUG
+	fprintf(stderr, "last: %llu, current: %llu\n", 
+					*last_raw_joules, *current_raw_joules);
+#endif
 		joules = UNIT_SCALE(delta_joules, units->energy);
 		if(msr_debug)
-			fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
-							__FILE__, __LINE__, domain2str(domain), joules);
+			fprintf(stderr, "%s::%d s%d scaled delta joules (%s) = %lf\n", 
+							__FILE__, __LINE__, socket, domain2str(domain), joules);
 	} else
 		joules = 0;
 	return joules;

@@ -40,7 +40,6 @@ void usage(const char * const argv0){
 //!@todo measure all sockets by default
 
 int main(int argc, char ** argv){
-	msr_debug=1;
   struct rapl_state_s rapl_state, rapl_state_outer;
 
   char filename[256], hostname[256], 
