@@ -97,8 +97,8 @@ read_msr(int core, off_t msr, uint64_t *val){
 		perror(error_msg);
 	}
 	if( msr_debug ){
-		fprintf(stderr, "%s::%d read msr=0x%lx val=0x%lx\n",
-				__FILE__, __LINE__, msr, *val);
+		fprintf(stderr, "%s::%d c%d read msr=0x%lx val=0x%lx\n",
+						__FILE__, __LINE__, core, msr, *val);
 	}
 }
 

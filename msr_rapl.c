@@ -98,8 +98,8 @@ get_energy_status(int socket, int domain, double *joules,
 	if(joules != NULL){
 		*joules = UNIT_SCALE(delta_joules, units->energy);
 		if(msr_debug){
-			fprintf(stderr, "%s::%d  scaled delta joules (%s) = %lf\n", 
-					__FILE__, __LINE__, domain2str(domain), *joules);
+			fprintf(stderr, "%s::%d s%d scaled delta joules (%s) = %lf\n", 
+							__FILE__, __LINE__, socket, domain2str(domain), *joules);
 		}
 	}
 }
