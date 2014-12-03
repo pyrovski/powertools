@@ -40,7 +40,8 @@ void usage(const char * const argv0){
 //!@todo measure all sockets by default
 
 int main(int argc, char ** argv){
-  struct rapl_state_s rapl_state;
+	msr_debug=1;
+  struct rapl_state_s rapl_state, rapl_state_outer;
 
   char filename[256], hostname[256], 
 		sampleFilename[256] = "sample.dat";
@@ -146,6 +147,7 @@ int main(int argc, char ** argv){
   f = fopen(filename, "w");
   assert(f);
   rapl_init(&rapl_state, f, 1);
+	rapl_state_outer = rapl_state;
   int core, socket, local;
   get_cpuid(&mc_config, &mc_config_initialized, &core, &socket, &local);
 
@@ -325,6 +327,6 @@ int main(int argc, char ** argv){
 	
 
   // don't reset MSRs on exit
-  rapl_finalize(&rapl_state, 0);
+  rapl_finalize(&rapl_state_outer, 0);
   return 0;
 }

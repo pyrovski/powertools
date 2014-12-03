@@ -73,8 +73,8 @@ get_raw_energy_status( int socket, int domain, uint64_t *raw_joules ){
 	/* 		socket, domain); */
 	/* } */
 	if(msr_debug){
-		fprintf(stderr, "%s::%d  raw joules (%s) = %lu\n", 
-			__FILE__, __LINE__, domain2str(domain), *raw_joules);
+		fprintf(stderr, "%s::%d s%d raw joules (%s) = %lu\n", 
+						__FILE__, __LINE__, socket, domain2str(domain), *raw_joules);
 	}
 }
 
