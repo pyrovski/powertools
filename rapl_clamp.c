@@ -71,7 +71,7 @@ int main(int argc, char ** argv){
   
   /*!
     get desired performance levels
-    @todo to run within rapl_clamp, use getopt "+" to supply args to execvp()
+    for running within rapl_clamp, use getopt "+" to supply args to execvp()
 	*/
   while((opt = getopt_long(argc, argv, 
 													 "+hedr0:P:w:o:s::S:"
@@ -323,7 +323,6 @@ int main(int argc, char ** argv){
 			}
     }
   }
-	
 
   // don't reset MSRs on exit
   rapl_finalize(&rapl_state_outer, 0);

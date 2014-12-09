@@ -187,7 +187,9 @@ void print_rapl_state(struct rapl_state_s *s);
 void set_raw_power_limit( int socket, int domain, uint64_t pval );			
 void set_raw_policy( int socket, int domain, uint64_t policy );
 
-void set_power_limit( int socket, int domain, struct power_limit_s *limit );		
+void setPowerCap_PKG(int socket, float watts,
+		     const struct rapl_state_s *rapl_state);
+void set_power_limit( int socket, int domain, struct power_limit_s *limit );
 void set_policy( int socket, int domain, uint64_t policy );
 
 void syncRAPL(int socket);

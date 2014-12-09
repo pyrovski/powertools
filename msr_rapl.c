@@ -241,6 +241,25 @@ set_raw_power_limit( int socket, int domain, uint64_t val ){
 	}
 }
 
+void setPowerCap_PKG(int socket, float watts,
+										 const struct rapl_state_s *rapl_state){
+	const int windowSize = 0; // minimum window size
+	struct power_limit_s power_limit1 = {
+		.lock = 0,
+		.clamp_1 = 1,
+		.enable_1 = 1,
+		.power_limit_1 = UNIT_DESCALE(watts, rapl_state->power_unit[socket].power),
+		.time_multiplier_1 = (windowSize >> 5) & 0b11,
+		.time_window_1 = windowSize & 0b11111,
+		.enable_2 = 0,
+		.clamp_2 = 0
+	};
+	if(watts > 0)
+		set_power_limit(socket, PKG_DOMAIN, &power_limit1);
+	else // watts == 0
+		write_msr( mc_config.map_socket_to_core[socket][0], MSR_PKG_POWER_LIMIT, 0 );
+}
+
 /*! @todo we need a more human-friendly interface for this
  */
 void
